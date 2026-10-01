@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  知库 · Knowledge Cards — app mark.
+  Two stacked cards: a knowledge card and the card behind it. Bold shapes only,
+  because this file is also rasterised to 16px favicons and to the PWA icon set.
+  Colours are concrete hex so html2canvas and the SVG exporter can resolve them.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="知库 Knowledge Cards">
+  <rect width="512" height="512" rx="112" fill="#070a12" />
+
+  <!-- back card -->
+  <rect x="88" y="104" width="336" height="304" rx="34" fill="#1a2436" />
+
+  <!-- front card (the knowledge itself) -->
+  <rect x="128" y="144" width="256" height="264" rx="28" fill="#e9eefb" />
+
+  <!-- spine -->
+  <rect x="160" y="176" width="10" height="200" rx="5" fill="#4cc9f0" />
+
+  <!-- text lines, progressively shorter so the block reads as prose -->
+  <rect x="196" y="188" width="156" height="18" rx="9" fill="#0d1320" opacity="0.82" />
+  <rect x="196" y="228" width="156" height="18" rx="9" fill="#0d1320" opacity="0.55" />
+  <rect x="196" y="268" width="156" height="18" rx="9" fill="#0d1320" opacity="0.55" />
+  <rect x="196" y="308" width="112" height="18" rx="9" fill="#a78bfa" opacity="0.75" />
+</svg>

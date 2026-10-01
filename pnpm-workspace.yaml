@@ -1,0 +1,15 @@
+# pnpm writes this file when it finds packages with postinstall scripts.
+#
+# Both entries MUST be booleans. pnpm scaffolds them as the literal string
+# "set this to true or false", which is not a valid YAML boolean and makes
+# pnpm skip the install step entirely.
+#
+# esbuild — Vite's bundler. Without its postinstall the binary is not linked
+#           and `vite build` fails.
+# sharp   — rasterises public/favicon.svg into the PWA icon set (pnpm run icons,
+#           which CI runs before the build).
+#
+# See https://pnpm.io/settings#allowbuilds
+allowBuilds:
+  esbuild: true
+  sharp: true

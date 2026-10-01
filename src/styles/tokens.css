@@ -1,0 +1,973 @@
+/* ==========================================================================
+   知库 · Knowledge Cards — design tokens
+   Owned by the orchestrator. `index.css` imports this file.
+
+   Two separate systems live here and must never be confused:
+   1. APP tokens  (--color-*, Tailwind utilities) — the UI chrome: sidebar,
+      headers, filters, editor. Dark-first, deliberately quiet so cards pop.
+   2. CARD tokens (--card-*) — the per-theme variables a theme definition
+      binds onto a card root. ALL markdown element styling in a card resolves
+      through these, so a new theme needs zero component changes.
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* Tailwind v4 honours the OS preference by default; we drive it from a class
+   so the user can force light or dark. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* ---- app canvas & surfaces ---- */
+  --color-canvas: #070a12;
+  --color-surface: #0d1320;
+  --color-surface-2: #131c2c;
+  --color-surface-3: #1a2436;
+
+  /* ---- app lines ---- */
+  --color-line: #1e293b;
+  --color-line-strong: #2b3a52;
+
+  /* ---- app text ---- */
+  --color-ink: #e9eefb;
+  --color-ink-2: #a3b3cc;
+  --color-ink-3: #6d7f9c;
+
+  /* ---- accents ---- */
+  --color-accent: #4cc9f0;
+  --color-accent-2: #a78bfa;
+  --color-accent-ink: #04121a;
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+
+  /* ---- typography ---- */
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  --font-serif:
+    "Songti SC", "SimSun", "Noto Serif SC", "Source Han Serif SC", Georgia,
+    "Times New Roman", serif;
+  --font-kai: "Kaiti SC", "STKaiti", "KaiTi", "楷体", var(--font-serif);
+  --font-mono:
+    "JetBrains Mono", "Cascadia Code", "SF Mono", Consolas, "Liberation Mono",
+    Menlo, monospace;
+
+  /* ---- radii ---- */
+  --radius-card: 18px;
+  --radius-panel: 14px;
+  --radius-pill: 999px;
+
+  /* ---- elevation (app chrome only; card shadows come from the theme) ---- */
+  --shadow-panel: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 12px 32px -12px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 24px 64px -24px rgb(0 0 0 / 0.85);
+}
+
+/* Light-mode overrides for the app chrome. */
+@layer base {
+  :root {
+    color-scheme: dark;
+    --app-canvas: #070a12;
+    --app-surface: #0d1320;
+    --app-surface-2: #131c2c;
+    --app-line: #1e293b;
+    --app-ink: #e9eefb;
+    --app-ink-2: #a3b3cc;
+    --app-accent: #4cc9f0;
+    /* Tints for inline notices and selected chips. Concrete rgba, never an
+       alpha modifier on a token: Tailwind compiles `/10` into `color-mix()`,
+       which the export renderer cannot resolve (see NEEDS_RESOLUTION in
+       `src/lib/export.ts`). Keeping them as tokens also lets the light theme
+       swap the whole pair for readable values. */
+    --app-accent-tint: rgb(76 201 240 / 0.14);
+    --app-warn-ink: #fbbf24;
+    --app-warn-tint: rgb(251 191 36 / 0.12);
+    --app-warn-line: rgb(251 191 36 / 0.38);
+    --app-danger-ink: #f87171;
+    --app-danger-tint: rgb(248 113 113 / 0.12);
+    --app-danger-line: rgb(248 113 113 / 0.38);
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  html:not(.dark) {
+    color-scheme: light;
+    --app-canvas: #f4f6fb;
+    --app-surface: #ffffff;
+    --app-surface-2: #f0f3f9;
+    --app-line: #dde3ed;
+    --app-ink: #0f172a;
+    --app-ink-2: #4a5568;
+    --app-accent: #0369a1;
+    --app-accent-tint: rgb(3 105 161 / 0.1);
+    --app-warn-ink: #92400e;
+    --app-warn-tint: rgb(180 83 9 / 0.08);
+    --app-warn-line: rgb(180 83 9 / 0.28);
+    --app-danger-ink: #b91c1c;
+    --app-danger-tint: rgb(185 28 28 / 0.07);
+    --app-danger-line: rgb(185 28 28 / 0.28);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--app-canvas);
+    color: var(--app-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  /* The app chrome is dark-first; give the light theme a soft tint instead of
+     a flat wash. */
+  html:not(.dark) body {
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgb(3 105 161 / 0.08), transparent 60%),
+      var(--app-canvas);
+  }
+
+  html.dark body {
+    background:
+      radial-gradient(1100px 620px at 80% -12%, rgb(76 201 240 / 0.09), transparent 62%),
+      radial-gradient(900px 520px at 0% 0%, rgb(167 139 250 / 0.07), transparent 60%),
+      var(--app-canvas);
+  }
+
+  ::selection {
+    background: rgb(76 201 240 / 0.28);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--app-line) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--app-line);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--app-ink-3);
+    background-clip: content-box;
+  }
+
+  /* Tap targets stay comfortable on phones (AGENTS.md §29). */
+  button,
+  [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ==========================================================================
+   CARD SURFACE — everything below is theme-agnostic.
+   A theme only supplies values for the --card-* variables. If a variable is
+   missing, the fallback here keeps the card readable.
+   ========================================================================== */
+
+@layer components {
+  .kc-card {
+    /* fallbacks — a bare card is still legible */
+    --card-background: #ffffff;
+    --card-foreground: #16181d;
+    --card-primary: #16181d;
+    --card-secondary: #5b6270;
+    --card-muted: #8a91a0;
+    --card-border: #e3e6ec;
+    --card-accent: #2f6feb;
+    --card-link: #2f6feb;
+    --card-code-background: #f5f6f9;
+    --card-code-foreground: #24292f;
+    --card-inline-code-background: #eef0f4;
+    --card-blockquote: #5b6270;
+    --card-blockquote-border: #d6dae2;
+    --card-table-border: #e3e6ec;
+    --card-table-header-background: #f5f6f9;
+    --card-table-stripe-background: #fafbfc;
+    --card-math: #16181d;
+    --card-divider: #e3e6ec;
+    --card-tag-background: #eef0f4;
+    --card-tag-foreground: #4a5160;
+    --card-radius: 18px;
+    --card-shadow: 0 20px 50px -28px rgb(0 0 0 / 0.55);
+    --card-line-height: 1.75;
+    --card-font: var(--font-sans);
+    --card-heading-font: var(--font-sans);
+    --card-padding: 28px;
+    --card-max-width: 760px;
+    --card-block-gap: 1em;
+    --card-letter-spacing: normal;
+    --card-font-weight: 400;
+    --card-texture: none;
+    --card-texture-opacity: 0;
+
+    position: relative;
+    box-sizing: border-box;
+    isolation: isolate;
+    max-width: var(--card-max-width);
+    width: 100%;
+    padding: var(--card-padding);
+    border-radius: var(--card-radius);
+    border: 1px solid var(--card-border);
+    background-color: var(--card-background);
+    color: var(--card-foreground);
+    box-shadow: var(--card-shadow);
+    font-family: var(--card-font);
+    font-weight: var(--card-font-weight);
+    line-height: var(--card-line-height);
+    letter-spacing: var(--card-letter-spacing);
+    /* A texture is painted by ::before on a pseudo element, never on the card
+       box itself, so it can be faded independently of the background colour.
+
+       `overflow: hidden` stays — the radius and the texture both need it — and
+       it is safe because the card is now always a LEAF of the flip scene (see
+       "CARD READING MODES" below). It used to sit BETWEEN the preserve-3d
+       element and the two faces, which flattened the whole 3D scene and let
+       the answer paint over the question. A card in 展开 mode grows to its
+       content, so this clips nothing; the wide, scrollable things (code,
+       tables, formulas) all carry their own horizontal scroller. */
+    overflow: hidden;
+    /* Export renders at a fixed aspect, so never let the card clip its own
+       content unexpectedly. */
+    overflow-wrap: break-word;
+  }
+
+  /* Texture lives on a pseudo element so it can be faded independently. */
+  .kc-card[data-texture="true"]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: var(--card-texture);
+    background-size: var(--card-texture-size, auto);
+    background-repeat: var(--card-texture-repeat, repeat);
+    opacity: var(--card-texture-opacity);
+    pointer-events: none;
+  }
+
+  /* ---- headings ---- */
+  .kc-card h1,
+  .kc-card h2,
+  .kc-card h3,
+  .kc-card h4,
+  .kc-card h5,
+  .kc-card h6 {
+    font-family: var(--card-heading-font);
+    color: var(--card-primary);
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    /* An h1 as the first block is the card title, not a section. */
+  }
+
+  .kc-card__body > :first-child {
+    margin-top: 0;
+  }
+
+  .kc-card__body > :last-child {
+    margin-bottom: 0;
+  }
+
+  .kc-card h1 {
+    font-size: 1.55em;
+    margin: 0 0 0.6em;
+  }
+
+  .kc-card h2 {
+    font-size: 1.2em;
+    margin: 1.6em 0 0.6em;
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid var(--card-divider);
+  }
+
+  .kc-card h3 {
+    font-size: 1.05em;
+    margin: 1.4em 0 0.5em;
+  }
+
+  .kc-card h4,
+  .kc-card h5,
+  .kc-card h6 {
+    font-size: 0.95em;
+    margin: 1.2em 0 0.4em;
+  }
+
+  /* ---- flow blocks: block margins, not flex gap, so html2canvas (§20) can
+         rasterise the card faithfully ---- */
+  .kc-card__body > * + * {
+    margin-top: var(--card-block-gap);
+  }
+
+  .kc-card p {
+    margin: 0;
+  }
+
+  /* ---- lists ---- */
+  .kc-card ul,
+  .kc-card ol {
+    margin: 0;
+    padding-left: 1.4em;
+  }
+
+  .kc-card li + li {
+    margin-top: 0.35em;
+  }
+
+  .kc-card li > ul,
+  .kc-card li > ol {
+    margin-top: 0.35em;
+  }
+
+  .kc-card ul {
+    list-style: disc;
+  }
+
+  .kc-card ol {
+    list-style: decimal;
+  }
+
+  .kc-card ul.contains-task-list {
+    list-style: none;
+    padding-left: 0.2em;
+  }
+
+  .kc-card li.task-list-item {
+    display: flex;
+    align-items: flex-start;
+  }
+
+  /* `margin-right`, never flex `gap`: html2canvas 1.4.1 does not implement
+     `gap` and the label would end up glued to the box (AGENTS.md §20). */
+  .kc-card li.task-list-item input[type="checkbox"] {
+    margin: 0.55em 0.5em 0 0;
+    accent-color: var(--card-accent);
+    flex: none;
+  }
+
+  /* ---- blockquote ---- */
+  .kc-card blockquote {
+    margin: 0;
+    padding: 0.15em 0 0.15em 1em;
+    border-left: 3px solid var(--card-blockquote-border);
+    color: var(--card-blockquote);
+    font-style: normal;
+  }
+
+  .kc-card blockquote > * + * {
+    margin-top: 0.5em;
+  }
+
+  /* ---- code ---- */
+  .kc-card code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--card-inline-code-background);
+    color: var(--card-foreground);
+    padding: 0.15em 0.38em;
+    border-radius: 5px;
+    word-break: break-word;
+  }
+
+  .kc-card pre {
+    margin: 0;
+    padding: 1em 1.1em;
+    background: var(--card-code-background);
+    color: var(--card-code-foreground);
+    border-radius: calc(var(--card-radius) * 0.55);
+    border: 1px solid var(--card-border);
+    overflow-x: auto;
+    /* Never split a code block across a page (AGENTS.md §14). */
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kc-card pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: 0.85em;
+    line-height: 1.65;
+    white-space: pre;
+  }
+
+  /* ---- tables ---- */
+  .kc-card .kc-table-scroll {
+    overflow-x: auto;
+    border-radius: calc(var(--card-radius) * 0.45);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .kc-card table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92em;
+    border: 1px solid var(--card-table-border);
+    border-radius: calc(var(--card-radius) * 0.45);
+    overflow: hidden;
+  }
+
+  .kc-card th,
+  .kc-card td {
+    border: 1px solid var(--card-table-border);
+    padding: 0.5em 0.75em;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .kc-card th {
+    background: var(--card-table-header-background);
+    color: var(--card-primary);
+    font-weight: 600;
+  }
+
+  .kc-card tbody tr:nth-child(even) {
+    background: var(--card-table-stripe-background);
+  }
+
+  /* ---- media ---- */
+  .kc-card img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-inline: auto;
+    border-radius: calc(var(--card-radius) * 0.4);
+    break-inside: avoid;
+  }
+
+  .kc-card hr {
+    border: 0;
+    border-top: 1px solid var(--card-divider);
+    margin: 0;
+  }
+
+  .kc-card a {
+    color: var(--card-link);
+    text-decoration: underline;
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: from-font;
+  }
+
+  /* ---- math ----
+     WHY THE FORMULA USED TO LOSE ITS LEFT-HAND SIDE
+     -----------------------------------------------
+     KaTeX emits
+
+         <span class="katex-display"><span class="katex">…</span></span>
+
+     and styles the inner block with `text-align: center`. The outer span is
+     the scroll box (`overflow-x: auto`), so as soon as a formula is wider than
+     the card the inner block is wider than the box AND centred: the overflow
+     exists on both sides, but only the right-hand side is scrollable. The
+     first symbols of a long equation are simply unreachable — that is the
+     reported "公式显示不全".
+
+     `width: max-content` + `min-width: 100%` pins the inner block to its own
+     natural width: it is still centred while it fits, and once it does not fit
+     it starts at the left edge and grows rightwards, where the scroller can
+     reach it. Nothing about the formula itself changes. */
+  .kc-card .katex {
+    color: var(--card-math);
+    font-size: 1.02em;
+  }
+
+  .kc-card .katex-display {
+    display: block;
+    max-width: 100%;
+    margin: 0;
+    /* Side padding so a fraction's bar is never flush against the card edge. */
+    padding: 0.25em 0.35em;
+    /* `auto` on both axes: `overflow-y: hidden` here would crop a tall
+       construct (a big fraction, a multi-line aligned derivation) with no way
+       to see the rest. */
+    overflow-x: auto;
+    overflow-y: auto;
+    /* KaTeX's own display margins are replaced by the block rhythm below, so
+       the equation sits on the same grid as the prose around it. */
+    break-inside: avoid;
+  }
+
+  .kc-card .katex-display > .katex {
+    display: block;
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+
+  /* ---- card chrome slots (meta row, tags, footer) ---- */
+  .kc-card__eyebrow {
+    font-family: var(--card-font);
+    font-size: 0.78em;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--card-muted);
+  }
+
+  .kc-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    /* Spacing lives on the chips, not on a `gap` — html2canvas 1.4.1 ignores
+       `gap` and the export would come out with every tag touching (AGENTS.md
+       §20). The negative TOP margin cancels the chips' first-row margin so the
+       row still begins where the prose above it does; a negative RIGHT margin
+       would instead push the first chip out of the content column, so the
+       trailing margin is cancelled on the last chip. */
+    margin: calc(var(--kc-row-gap, 0.45em) * -1) 0 0;
+  }
+
+  .kc-card__tags > * {
+    margin: var(--kc-row-gap, 0.45em) var(--kc-row-gap, 0.45em) 0 0;
+  }
+
+  .kc-card__tags > *:last-child {
+    margin-right: 0;
+  }
+
+  .kc-card__tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.16em 0.6em;
+    border-radius: var(--card-radius);
+    background: var(--card-tag-background);
+    color: var(--card-tag-foreground);
+    font-size: 0.78em;
+    line-height: 1.7;
+    white-space: nowrap;
+  }
+
+  .kc-card__rule {
+    height: 1px;
+    background: var(--card-divider);
+    border: 0;
+    margin: 0;
+  }
+
+  /* A one-line, plain-language note inside a card: how to reach content that
+     does not fit (答案较长，可上下滚动). */
+  .kc-card__hint {
+    font-size: 0.78em;
+    line-height: 1.6;
+    color: var(--card-muted);
+  }
+
+  /* The 翻面 control. It is a real <button> so the flip is reachable by
+     keyboard and announced properly; its colours come from the theme's own
+     chip pair, which every one of the ten themes defines at AA contrast. */
+  .kc-card__action {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 0.3em 0.75em;
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    background: var(--card-tag-background);
+    color: var(--card-tag-foreground);
+    font-family: inherit;
+    font-size: 0.8em;
+    font-weight: 500;
+    line-height: 1.6;
+    cursor: pointer;
+    transition: border-color 160ms ease, opacity 160ms ease;
+  }
+
+  .kc-card__action > * {
+    margin-right: 0.4em;
+  }
+
+  .kc-card__action > *:last-child {
+    margin-right: 0;
+  }
+
+  .kc-card__action:hover {
+    border-color: var(--card-accent);
+    opacity: 0.88;
+  }
+
+  .kc-card__action:focus-visible {
+    outline: 2px solid var(--card-accent);
+    outline-offset: 2px;
+  }
+
+  /* An inline notice in app chrome: a warning or an error the reader must see
+     before acting. Colours come from the light/dark `--app-*` tints above, so
+     both modes stay readable without a single `color-mix()`. */
+  .kc-notice {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid;
+    border-radius: var(--radius-panel);
+    font-size: 0.8125rem;
+    line-height: 1.65;
+  }
+
+  .kc-notice__icon {
+    flex: none;
+    margin-top: 0.15rem;
+    margin-right: 0.5rem;
+  }
+
+  .kc-notice--warn {
+    border-color: var(--app-warn-line);
+    background: var(--app-warn-tint);
+    color: var(--app-warn-ink);
+  }
+
+  .kc-notice--danger {
+    border-color: var(--app-danger-line);
+    background: var(--app-danger-tint);
+    color: var(--app-danger-ink);
+  }
+
+  /* ---- layout helpers -----------------------------------------------------
+     Two small primitives so vertical rhythm never depends on a flex/grid
+     `gap`, which html2canvas 1.4.1 does not implement. */
+  .kc-stack {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .kc-stack > * + * {
+    margin-top: var(--kc-stack-gap, 1rem);
+  }
+
+  /* Pinned to the bottom of a `.kc-stack` (the card's footer row). */
+  .kc-stack__foot {
+    margin-top: auto;
+    padding-top: var(--kc-stack-gap, 1rem);
+  }
+
+  .kc-inline-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .kc-inline-row > * {
+    margin-right: var(--kc-row-gap, 0.4rem);
+    margin-bottom: var(--kc-row-gap-y, 0px);
+  }
+
+  /* Margins cannot be trimmed by a wrapping parent the way `gap` is, so the
+     last child gives its right margin back — otherwise a right-aligned row
+     ends up one gutter short of the card edge. */
+  .kc-inline-row > *:last-child {
+    margin-right: 0;
+  }
+}
+
+/* ==========================================================================
+   Writing mode for Chinese-classic themes. Opt-in via the theme definition and
+   always degradable: the renderer keeps horizontal flow if unsupported.
+
+   `.kc-vertical` is a class ON the card root, not a wrapper around it, so
+   every rule below targets `.kc-card.kc-vertical`. The old
+   `.kc-vertical .kc-card h1` shape could never match a card that carries both
+   classes, which is why the tracking tweaks never applied.
+
+   `overflow: auto` on BOTH axes is load-bearing. `.kc-card` sets
+   `overflow: hidden`, and in a vertical flow the block axis is horizontal: a
+   long answer simply grows off the right-hand edge, and with the axis left at
+   `hidden` that growth was cropped with no way to reach it. The cap below is
+   what makes a vertical card a readable column, not a truncation.
+   ========================================================================== */
+
+@layer components {
+  .kc-card.kc-vertical {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    max-height: var(--card-vertical-height, 78vh);
+    overflow: auto;
+  }
+
+  .kc-card.kc-vertical h1,
+  .kc-card.kc-vertical h2,
+  .kc-card.kc-vertical h3 {
+    letter-spacing: 0.06em;
+  }
+
+  /* In a vertical flow the block rhythm runs right-to-left, so the vertical
+     margin of the horizontal rule becomes a column gap. */
+  .kc-card.kc-vertical .kc-card__body > * + * {
+    margin-top: 0;
+    margin-left: var(--card-block-gap);
+  }
+
+  /* Latin runs and machine content stay horizontal: a rotated code block or a
+     rotated table is unreadable, and KaTeX has no vertical metrics at all, so
+     a formula set vertical collapses into overlapping glyphs. */
+  .kc-card.kc-vertical table,
+  .kc-card.kc-vertical pre,
+  .kc-card.kc-vertical .kc-table-scroll,
+  .kc-card.kc-vertical .katex,
+  .kc-card.kc-vertical .katex-display,
+  .kc-card.kc-vertical img {
+    writing-mode: horizontal-tb;
+  }
+
+  /* A horizontal island inside a vertical column still scrolls sideways. */
+  .kc-card.kc-vertical .katex-display {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Card reading modes — 展开 / 翻面
+   --------------------------------------------------------------------------
+   THE 3D FIX
+   ----------
+   `transform-style: preserve-3d` only survives while no ancestor of a
+   3D-transformed element establishes a grouping context, and `overflow: hidden`
+   is one. The markup used to be
+
+       .kc-flip-scene  perspective
+         .kc-flip-inner  preserve-3d
+           .kc-card        overflow: hidden   <- flattened everything
+             .kc-flip-face  backface-visibility: hidden   <- stopped working
+
+   so the scene was flattened, `backface-visibility` did nothing, and the answer
+   was painted on top of the question without a click. The card is now the FACE
+   itself — a direct child of the preserve-3d element — so the `overflow: hidden`
+   it still needs for the radius and the texture layer clips only its own
+   contents.
+
+   HOW A LONG ANSWER FITS
+   ----------------------
+   The front face stays in normal flow and therefore owns the card's height; the
+   back is `position: absolute; inset: 0`, so the two faces are the same size
+   and the card keeps its shape through the turn. The back's overflow is
+   `auto`, never `hidden`: an answer taller than the question is read by
+   scrolling inside the card, and nothing is ever cut off. Sizing the scene to
+   the taller face instead was rejected because a grid of flip cards would then
+   grow to the length of its longest answer, and a scroll region nested inside a
+   rotating card traps the page scroll on touch — the exact thing the 分页
+   reader was removed for. 展开 mode has no window at all: the answer is the
+   page.
+   ========================================================================== */
+
+@layer components {
+  .kc-flip-scene {
+    perspective: 1600px;
+  }
+
+  .kc-flip-inner {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .kc-flip-scene[data-motion='3d'] .kc-flip-inner {
+    will-change: transform;
+  }
+
+  .kc-flip-scene[data-flipped='true'] .kc-flip-inner {
+    transform: rotateY(180deg);
+  }
+
+  .kc-flip-face {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  /* A floor, so a one-line question and a one-paragraph answer still turn on a
+     card-sized surface. Set per size below. */
+  .kc-flip-face[data-face='front'] {
+    min-height: var(--kc-flip-min-height, 0px);
+  }
+
+  .kc-flip-face[data-face='back'] {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+    /* A window, not a crop. */
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* The face you cannot see must also be un-clickable. `inert` is set from the
+     component and covers the tab order and the a11y tree, but the back face is
+     an absolutely positioned overlay sitting on top of the question: without
+     this, every tap on a card would land on the invisible answer. */
+  .kc-flip-scene[data-flipped='false'] .kc-flip-face[data-face='back'],
+  .kc-flip-scene[data-flipped='true'] .kc-flip-face[data-face='front'] {
+    pointer-events: none;
+  }
+
+  /* A 翻面 card is a fixed window, so the window has to be tall enough to be
+     worth scrolling in. `sm` and `md` are grid cards and only need a card-sized
+     floor; `lg` is the single-card page and the review page, where the window
+     should not swallow a short phone screen but should not balloon on a big one.
+     `svh` rather than `vh` so collapsing mobile browser chrome cannot resize the
+     window mid-turn. */
+  .kc-flip-scene[data-size='sm'] {
+    --kc-flip-min-height: 13rem;
+  }
+
+  .kc-flip-scene[data-size='md'] {
+    --kc-flip-min-height: 16rem;
+  }
+
+  .kc-flip-scene[data-size='lg'] {
+    --kc-flip-min-height: min(58svh, 30rem);
+  }
+
+  /* The three Chinese-classic themes read top-to-bottom in 展开 mode. A flip
+     face cannot honour that: the front's height decides the window, and a
+     vertical card's height is the length of its — very short — question, which
+     would leave a strip a few characters tall. So the flip degrades the writing
+     mode and keeps everything else exactly as the theme defines it: palette,
+     fonts, texture, seal red. This is the degradation the theme registry
+     already anticipates ("a REQUEST — the renderer keeps horizontal flow when
+     it cannot honour it"). */
+  .kc-flip-scene .kc-card.kc-vertical,
+  .kc-flip-scene .kc-flip-face[data-face='back'] {
+    writing-mode: horizontal-tb;
+    max-height: none;
+  }
+
+  /* Reduced motion: a cross-fade instead of a turn. Both faces stay in the
+     layout so the card does not resize as it changes sides.
+
+     TWO TRANSFORMS HAVE TO BE NEUTRALISED, NOT ONE
+     ----------------------------------------------
+     `.kc-flip-face[data-face='back']` carries `rotateY(180deg)` purely to
+     cancel the parent's turn: 180 (parent) + 180 (own) = 360, which faces the
+     viewer and reads normally. Fade mode stops the parent from turning and
+     forces `backface-visibility: visible` so the answer can be shown in place
+     — but the counter-rotation was left in place with nothing to cancel it, and
+     the answer painted rotated 180 degrees: mirrored glyphs, reversed reading
+     order.
+
+     Both neutralisations are written to win on SPECIFICITY, not on source
+     order, so re-editing this block cannot silently bring the mirror back:
+       parent  (0,3,0) here  vs  (0,3,0) on the `[data-flipped='true']` rule
+       back    (0,4,0) here  vs  (0,2,0) on the `[data-face='back']` rule
+     The `[data-flipped]` in the first selector is always present — it exists
+     only to lift that rule's specificity. */
+  .kc-flip-scene[data-motion='fade'][data-flipped] .kc-flip-inner {
+    transform: none;
+    transition: opacity 220ms ease;
+  }
+
+  .kc-flip-scene[data-motion='fade'] .kc-flip-face {
+    backface-visibility: visible;
+    transition: opacity 220ms ease;
+  }
+
+  /* With no turn on the parent, the back face has no rotation to undo. */
+  .kc-flip-scene[data-motion='fade'] .kc-flip-face[data-face='back'] {
+    transform: none;
+  }
+
+  .kc-flip-scene[data-motion='fade'][data-flipped='false'] .kc-flip-face[data-face='back'],
+  .kc-flip-scene[data-motion='fade'][data-flipped='true'] .kc-flip-face[data-face='front'] {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kc-flip-inner,
+    .kc-flip-face {
+      transition: none;
+    }
+  }
+}
+
+/* ==========================================================================
+   Export staging surface
+   --------------------------------------------------------------------------
+   The image source has to be a clean, static, fully expanded card. Three things
+   would otherwise be baked into the PNG:
+
+   1. the 翻面 window — the stage always renders 展开, so there is no window;
+   2. vertical writing — html2canvas 1.4.1 has no `writing-mode` support at
+      all, so a 水墨 / 宣纸 / 竹简 card would rasterise as a collapsed column.
+      Forced horizontal here; the theme's palette and fonts are untouched;
+   3. inner scroll boxes — `overflow: auto` makes html2canvas paint whatever
+      happens to be scrolled into view. Un-scrolling them means a long code
+      block or a wide formula is written out in full, and `ExportMenu` widens
+      the stage to fit the widest formula it finds.
+   ========================================================================== */
+
+@layer components {
+  .kc-card[data-export-stage='true'] {
+    writing-mode: horizontal-tb;
+    max-height: none;
+    max-width: none;
+    transition: none;
+    animation: none;
+  }
+
+  .kc-card[data-export-stage='true'] .katex-display,
+  .kc-card[data-export-stage='true'] pre,
+  .kc-card[data-export-stage='true'] .kc-table-scroll {
+    overflow: visible;
+  }
+}
+
+/* ==========================================================================
+   Small utilities
+   ========================================================================== */
+
+@layer utilities {
+  .kc-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .kc-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .kc-clamp-6 {
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    line-clamp: 6;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .kc-safe-b {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .kc-safe-t {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+
+  /* Grid lines for the theme gallery swatches. */
+  .kc-swatch-grid {
+    background-image:
+      linear-gradient(var(--app-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--app-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+}

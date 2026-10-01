@@ -1,0 +1,24 @@
+/* ==========================================================================
+   知库 · Knowledge Cards — stylesheet entry
+   Owned by the orchestrator.
+
+   IMPORT ORDER IS LOAD-BEARING.
+
+     1. tokens.css   brings in Tailwind v4 and defines every APP token
+                     (`--color-*`) plus the shared `.kc-card` surface, whose
+                     every colour resolves through a `--card-*` variable.
+     2. themes.css   supplies the per-theme flourishes that are structural or
+                     typographic rather than palette data, and is written to
+                     layer on top of tokens.css. It defines no `--card-*`
+                     colour of its own — those all live in registry.ts.
+     3. katex        MUST come last: `.katex` sets its own font stack and
+                     `line-height`, and it must win over the generic card
+                     typography. Without this import every formula renders
+                     as unstyled LaTeX source.
+
+   Do not reorder without re-checking the card surface (AGENTS.md §10, §26).
+   ========================================================================== */
+
+@import './tokens.css';
+@import '../features/themes/themes.css';
+@import 'katex/dist/katex.min.css';

@@ -1,0 +1,323 @@
+/* ==========================================================================
+   Theme flourishes — 知库 · Knowledge Cards
+   Owned by the theme feature. Import AFTER `styles/tokens.css`.
+
+   WHAT LIVES HERE
+   tokens.css owns the theme-agnostic card surface and `registry.ts` owns every
+   colour value. Neither can express the handful of things below, which are
+   structural or typographic flourishes rather than palette data:
+
+     · the engine hook that makes `--card-font-size` actually apply
+     · line weights, rules and heading tracking that differ per theme
+     · `mark` and `::selection`, which need a concrete rgba per theme
+     · the vertical-flow height for the three Chinese-classic themes
+
+   RULES FOR THIS FILE
+   1. No theme colour is redefined here. If something can be a `--card-*`
+      variable, it belongs in `registry.ts` instead.
+   2. Colours are concrete `hex` / `rgb()` / `rgba()` — never `oklch()`,
+      `color-mix()` or `currentColor`, because html2canvas and the foreignObject
+      SVG writer must resolve them (AGENTS.md §20).
+   3. Selectors are `.kc-card[data-theme="id"]`, matching the engine's contract:
+      `themeToBinding()` puts `data-theme` on the card root. That is 0-2-1
+      specificity, so these rules beat tokens.css without `!important`, while
+      still losing to Tailwind utilities in the `utilities` layer.
+   ========================================================================== */
+
+@layer components {
+  /* ---- engine hook ------------------------------------------------------
+     The engine emits `--card-font-size` from `typography.baseSize`, but the
+     card surface in tokens.css never consumes it. One line here turns that
+     variable into real typographic scaling for every theme. */
+  .kc-card {
+    font-size: var(--card-font-size, 1rem);
+  }
+
+  /* ---- Chinese-classic themes ------------------------------------------
+     Declared on the themed element so it also reaches a `.kc-vertical`
+     wrapper when one is used. tokens.css keeps 78vh as its fallback. */
+  [data-theme='shui-mo'],
+  [data-theme='xuan-zhi'],
+  [data-theme='zhu-jian'] {
+    --card-vertical-height: 78vh;
+  }
+
+  /* ================================================================
+     极简 · apple-notes — warm yellow is the only colour on the page
+     ================================================================ */
+  .kc-card[data-theme='apple-notes'] mark {
+    background: rgba(224, 169, 46, 0.34);
+    color: #3a2c07;
+    padding: 0.05em 0.2em;
+    border-radius: 4px;
+  }
+
+  /* ================================================================
+     极简 · paper — a single hairline under the title, no hard edges
+     ================================================================ */
+  .kc-card[data-theme='paper'] h1,
+  .kc-card[data-theme='paper'] h2,
+  .kc-card[data-theme='paper'] h3 {
+    letter-spacing: 0.02em;
+  }
+
+  .kc-card[data-theme='paper'] h2 {
+    border-bottom-color: rgba(47, 93, 124, 0.28);
+  }
+
+  .kc-card[data-theme='paper'] mark {
+    background: rgba(47, 93, 124, 0.14);
+    color: #24485c;
+    padding: 0.05em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* ================================================================
+     艺术 · memphis — thick outline, hard offset shadow, blocked labels
+     ================================================================ */
+  .kc-card[data-theme='memphis'] {
+    border-width: 3px;
+  }
+
+  .kc-card[data-theme='memphis'] h1,
+  .kc-card[data-theme='memphis'] h2,
+  .kc-card[data-theme='memphis'] h3 {
+    letter-spacing: -0.02em;
+  }
+
+  .kc-card[data-theme='memphis'] h2 {
+    border-bottom-width: 3px;
+  }
+
+  .kc-card[data-theme='memphis'] .kc-card__tag {
+    border: 2px solid #14141a;
+    font-weight: 700;
+  }
+
+  .kc-card[data-theme='memphis'] .kc-card__rule {
+    height: 3px;
+  }
+
+  .kc-card[data-theme='memphis'] mark {
+    background: #ffe066;
+    color: #14141a;
+    padding: 0.05em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* ================================================================
+     艺术 · retro — printed brochure: wide heads, dashed rules
+     ================================================================ */
+  .kc-card[data-theme='retro'] h1,
+  .kc-card[data-theme='retro'] h2,
+  .kc-card[data-theme='retro'] h3 {
+    letter-spacing: 0.04em;
+  }
+
+  .kc-card[data-theme='retro'] h2 {
+    border-bottom-style: dashed;
+  }
+
+  .kc-card[data-theme='retro'] mark {
+    background: rgba(194, 82, 28, 0.16);
+    color: #7a3413;
+    padding: 0.05em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* ================================================================
+     科技 · cyberpunk — signage, not a document
+     ================================================================ */
+  .kc-card[data-theme='cyberpunk'] h1,
+  .kc-card[data-theme='cyberpunk'] h2,
+  .kc-card[data-theme='cyberpunk'] h3 {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .kc-card[data-theme='cyberpunk'] .kc-card__eyebrow {
+    letter-spacing: 0.28em;
+  }
+
+  /* A neon seam instead of a flat hairline. */
+  .kc-card[data-theme='cyberpunk'] .kc-card__rule {
+    height: 2px;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 46, 166, 0.9) 0%,
+      rgba(34, 230, 255, 0.9) 100%
+    );
+  }
+
+  .kc-card[data-theme='cyberpunk'] mark {
+    background: rgba(34, 230, 255, 0.2);
+    color: #b6f4ff;
+    padding: 0.05em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* ================================================================
+     科技 · terminal — a prompt, a cursor bar, no rounded comfort
+     ================================================================ */
+  .kc-card[data-theme='terminal'] h1,
+  .kc-card[data-theme='terminal'] h2,
+  .kc-card[data-theme='terminal'] h3 {
+    letter-spacing: 0.06em;
+  }
+
+  .kc-card[data-theme='terminal'] .kc-card__eyebrow::before {
+    content: '> ';
+    color: #33ff99;
+  }
+
+  .kc-card[data-theme='terminal'] pre {
+    border-left: 3px solid #33ff99;
+  }
+
+  .kc-card[data-theme='terminal'] .kc-card__tag {
+    border: 1px solid #1c3327;
+  }
+
+  .kc-card[data-theme='terminal'] mark {
+    background: rgba(51, 255, 153, 0.18);
+    color: #eafff2;
+    padding: 0.05em 0.2em;
+    border-radius: 2px;
+  }
+
+  /* ================================================================
+     中国传统 · shui-mo — 留白 first, tracking does the vertical work
+     ================================================================ */
+  .kc-card[data-theme='shui-mo'] .kc-card__eyebrow,
+  .kc-card[data-theme='xuan-zhi'] .kc-card__eyebrow,
+  .kc-card[data-theme='zhu-jian'] .kc-card__eyebrow {
+    /* tokens.css sets 0.16em + uppercase for the eyebrow; both are wrong for
+       Han characters, which must not be tracked out or shouted. */
+    letter-spacing: 0.08em;
+    text-transform: none;
+  }
+
+  .kc-card[data-theme='shui-mo'] h1,
+  .kc-card[data-theme='shui-mo'] h2,
+  .kc-card[data-theme='shui-mo'] h3 {
+    letter-spacing: 0.1em;
+  }
+
+  /* 印章-style seal for the label row. */
+  .kc-card[data-theme='shui-mo'] .kc-card__tag {
+    border: 1px solid rgba(168, 50, 42, 0.45);
+  }
+
+  .kc-card[data-theme='shui-mo'] mark {
+    background: rgba(168, 50, 42, 0.14);
+    color: #7d1f19;
+    padding: 0.05em 0.2em;
+    border-radius: 2px;
+  }
+
+  /* ================================================================
+     中国传统 · xuan-zhi — 楷体 head, softened rules
+     ================================================================ */
+  .kc-card[data-theme='xuan-zhi'] h1,
+  .kc-card[data-theme='xuan-zhi'] h2,
+  .kc-card[data-theme='xuan-zhi'] h3 {
+    letter-spacing: 0.1em;
+  }
+
+  .kc-card[data-theme='xuan-zhi'] h2 {
+    border-bottom-color: rgba(160, 138, 96, 0.45);
+  }
+
+  .kc-card[data-theme='xuan-zhi'] .kc-card__tag {
+    border: 1px solid rgba(160, 138, 96, 0.55);
+  }
+
+  .kc-card[data-theme='xuan-zhi'] mark {
+    background: rgba(178, 58, 46, 0.12);
+    color: #7a2016;
+    padding: 0.05em 0.2em;
+    border-radius: 2px;
+  }
+
+  /* ================================================================
+     中国传统 · zhu-jian — 简 columns want more air than anything else
+     ================================================================ */
+  .kc-card[data-theme='zhu-jian'] h1,
+  .kc-card[data-theme='zhu-jian'] h2,
+  .kc-card[data-theme='zhu-jian'] h3 {
+    letter-spacing: 0.12em;
+  }
+
+  .kc-card[data-theme='zhu-jian'] .kc-card__tag {
+    border: 1px solid rgba(124, 100, 52, 0.5);
+    letter-spacing: 0.1em;
+  }
+
+  .kc-card[data-theme='zhu-jian'] mark {
+    background: rgba(156, 59, 38, 0.12);
+    color: #6d2817;
+    padding: 0.05em 0.2em;
+    border-radius: 2px;
+  }
+
+  /* ================================================================
+     自然 · forest — damp light along the top edge, a fading rule
+     ================================================================ */
+  .kc-card[data-theme='forest'] {
+    box-shadow:
+      var(--card-shadow),
+      inset 0 1px 0 rgba(214, 240, 216, 0.06);
+  }
+
+  .kc-card[data-theme='forest'] h1,
+  .kc-card[data-theme='forest'] h2,
+  .kc-card[data-theme='forest'] h3 {
+    letter-spacing: 0.01em;
+  }
+
+  .kc-card[data-theme='forest'] .kc-card__rule {
+    background-image: linear-gradient(
+      90deg,
+      rgba(158, 211, 107, 0.55) 0%,
+      rgba(143, 201, 138, 0) 100%
+    );
+  }
+
+  .kc-card[data-theme='forest'] mark {
+    background: rgba(158, 211, 107, 0.18);
+    color: #e6f5d8;
+    padding: 0.05em 0.2em;
+    border-radius: 3px;
+  }
+
+  /* ================================================================
+     Selection inside cards
+     The app-level `::selection` in tokens.css is tuned for the chrome, so a
+     highlighted answer inside a card would look borrowed. Grouped by family
+     to stay small: warm neutrals, neon, phosphor, foliage, 朱砂.
+     ================================================================ */
+  .kc-card[data-theme='apple-notes'] ::selection,
+  .kc-card[data-theme='paper'] ::selection,
+  .kc-card[data-theme='retro'] ::selection,
+  .kc-card[data-theme='memphis'] ::selection {
+    background: rgba(120, 140, 190, 0.28);
+  }
+
+  .kc-card[data-theme='cyberpunk'] ::selection {
+    background: rgba(34, 230, 255, 0.3);
+  }
+
+  .kc-card[data-theme='terminal'] ::selection {
+    background: rgba(51, 255, 153, 0.26);
+  }
+
+  .kc-card[data-theme='forest'] ::selection {
+    background: rgba(158, 211, 107, 0.26);
+  }
+
+  .kc-card[data-theme='shui-mo'] ::selection,
+  .kc-card[data-theme='xuan-zhi'] ::selection,
+  .kc-card[data-theme='zhu-jian'] ::selection {
+    background: rgba(168, 50, 42, 0.18);
+  }
+}
