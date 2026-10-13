@@ -61,7 +61,7 @@ export interface ReadModeToggleProps {
 
 /**
  * 展开 is the default because it is the only mode with nothing between the
- * reader and the text (design-plan: content readability > information
+ * reader and the text (content readability > information
  * hierarchy > efficiency > decoration, AGENTS.md §28). The choice is
  * remembered as a *preference*, not data — the same treatment
  * `shell/preferences.ts` gives appearance and card theme.

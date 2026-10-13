@@ -4,7 +4,7 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/cn'
 
 /**
- * shadcn-style primitives (design-plan §46).
+ * shadcn-style primitives.
  *
  * These handle UI chrome only — buttons, fields, overlays. They are
  * deliberately theme-agnostic: card visuals belong to the Theme Engine, never

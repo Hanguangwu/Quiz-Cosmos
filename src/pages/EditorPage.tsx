@@ -8,6 +8,8 @@ import {
   Eye,
   FileText,
   PenLine,
+  Save,
+  Trash2,
   TriangleAlert,
   Upload,
 } from 'lucide-react'
@@ -28,6 +30,8 @@ import {
   Separator,
 } from '@/ui'
 import { useKnowledge } from '@/lib/knowledge-context'
+import { useAuth } from '@/lib/auth'
+import { createCard, deleteCard, updateCard, type CardInput } from '@/lib/api'
 import { replaceFrontMatter, resolveCard } from '@/lib/content'
 import { parseCard } from '@/lib/parser'
 import { deleteDraft, loadDraft, saveDraft } from '@/lib/drafts'
@@ -46,16 +50,15 @@ import { THEMES } from '@/features/themes/registry'
 import { cn } from '@/lib/cn'
 
 /**
- * Markdown editor (design-plan §11, §21, AGENTS.md §13).
+ * Markdown editor.
  *
- * Left: source. Right: live preview. The editor is *not* the card UI — it is a
- * file editor for the artefact the reader owns (design-plan §11: the editing
- * surface and the reading surface are deliberately different).
+ * Left: source. Right: live preview. The editor is *not* the card UI — the
+ * editing surface and the reading surface are deliberately different.
  *
- * Persistence model (design-plan §28–31, AGENTS.md §3): drafts live in
- * IndexedDB so a refresh never loses work, but the only way to publish is to
- * download the `.md` file into `content/` and commit it. There is no backend
- * and no GitHub write from the browser.
+ * Persistence model: drafts live in IndexedDB so a refresh never loses work;
+ * 「保存」writes the card to Cloudflare D1 through the Pages Function API
+ * (requires the edit password). 「下载 .md」exists only as a backup convenience —
+ * the database is the source of truth.
  */
 
 type Panel = 'edit' | 'preview'
@@ -81,7 +84,8 @@ function sourceFromCard(card: NonNullable<ReturnType<typeof resolveCard>>): stri
 export default function EditorPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
-  const { index, loading } = useKnowledge()
+  const { index, loading, reload } = useKnowledge()
+  const { token, isAuthed } = useAuth()
 
   const [text, setText] = useState('')
   const [original, setOriginal] = useState('')
@@ -91,9 +95,13 @@ export default function EditorPage() {
   const [restored, setRestored] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showMeta, setShowMeta] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const ready = useRef(false)
 
   const draftKey = slug ?? '__new__'
+  const existingCard = useMemo(() => (slug && index ? resolveCard(slug, index) : null), [slug, index])
+  const existingId = existingCard?.id ?? null
 
   // --- initial source -----------------------------------------------------
   useEffect(() => {
@@ -168,6 +176,65 @@ export default function EditorPage() {
     ready.current = true
   }, [draftKey, slug, index])
 
+  /** Create or update the card on the server (Cloudflare D1). */
+  const onSave = useCallback(async () => {
+    if (!parsed.ok || !front || !token) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const input: CardInput = {
+        title: front.title.trim(),
+        question: parsed.card.question,
+        answer: parsed.card.answer,
+        category: front.category.trim(),
+        subcategory: front.subcategory,
+        difficulty: front.difficulty,
+        status: front.status,
+        theme: front.theme,
+        tags: front.tags,
+        aliases: front.aliases,
+        related: front.related,
+      }
+      if (existingId) {
+        await updateCard(existingId, input, token)
+        await deleteDraft(draftKey)
+        reload()
+        navigate(`/card/${existingId}`)
+      } else {
+        const id = front.id.trim()
+        if (id) input.id = id
+        const created = await createCard(input, token)
+        await deleteDraft(draftKey)
+        reload()
+        navigate(`/card/${created.id}`)
+      }
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : '保存失败，请重试。')
+    } finally {
+      setSaving(false)
+    }
+  }, [parsed, front, token, existingId, draftKey, reload, navigate])
+
+  /** Soft-delete the card on the server. */
+  const onDelete = useCallback(async () => {
+    if (!existingId || !token) return
+    if (typeof window !== 'undefined' && !window.confirm(`确定删除卡片「${existingId}」吗？`)) {
+      return
+    }
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await deleteCard(existingId, token)
+      await deleteDraft(draftKey)
+      reload()
+      navigate('/cards')
+    } catch (cause) {
+      setSaveError(cause instanceof Error ? cause.message : '删除失败，请重试。')
+    } finally {
+      setSaving(false)
+    }
+  }, [existingId, token, draftKey, reload, navigate])
+
   const categories = index?.categories ?? []
   const allTags = index?.tags ?? []
   const takenIds = useMemo(() => index?.cards.map((c) => c.id) ?? [], [index])
@@ -188,43 +255,64 @@ export default function EditorPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {dirty ? (
-            <Badge tone="warn">
-              {draftAt ? '草稿已保存到本机' : '编辑中…'}
-            </Badge>
+            <Badge tone="warn">{draftAt ? '有未保存的改动' : '编辑中…'}</Badge>
           ) : null}
           {restored ? (
             <Button variant="ghost" size="sm" onClick={onDiscardDraft}>
               <Upload />
-              放弃草稿
+              放弃本地草稿
             </Button>
           ) : null}
           <Button variant="outline" size="sm" onClick={onCopy}>
             {copied ? <Check /> : <ClipboardCopy />}
             {copied ? '已复制' : '复制 Markdown'}
           </Button>
-          <Button variant="primary" size="sm" onClick={onDownload}>
+          <Button variant="outline" size="sm" onClick={onDownload}>
             <Download />
             下载 .md
+          </Button>
+          {existingId ? (
+            <Button variant="danger" size="sm" onClick={onDelete} disabled={saving}>
+              <Trash2 />
+              删除
+            </Button>
+          ) : null}
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onSave}
+            disabled={!parsed.ok || saving || !isAuthed}
+          >
+            <Save />
+            {saving ? '保存中…' : '保存'}
           </Button>
         </div>
       </div>
 
       <PageHeader
         title={slug ? '编辑卡片' : '新建卡片'}
-        description="Markdown 是正式数据源。下载后放入 content/ 目录并提交 Git 即可发布。"
+        description="编辑并保存到服务器（Cloudflare D1），保存后立即生效。"
       />
 
-      {/* Publish path, spelled out (design-plan §30–31). */}
+      {/* Data flow, spelled out. */}
       <div className="mb-5 flex flex-wrap items-center gap-2 rounded-[var(--radius-panel)] border border-[var(--color-line)] bg-[var(--color-surface)] px-3.5 py-2.5 text-xs text-[var(--color-ink-3)]">
         <FileText aria-hidden className="size-3.5 shrink-0" />
-        发布流程：
+        数据保存在 Cloudflare D1：
         <code className="rounded bg-[var(--color-surface-2)] px-1.5 py-0.5 text-[var(--color-ink-2)]">
-          下载 .md
+          保存
         </code>
-        → 放入 <code className="rounded bg-[var(--color-surface-2)] px-1.5 py-0.5">content/</code> →
-        <code className="rounded bg-[var(--color-surface-2)] px-1.5 py-0.5">git commit</code> →
-        构建自动生成索引
+        → 立即对所有访问者生效；本地 Markdown 草稿仅用于防止刷新丢失
       </div>
+
+      {saveError ? (
+        <div
+          role="alert"
+          className="mb-5 flex items-start gap-2 rounded-[var(--radius-panel)] border border-[var(--color-danger)]/40 bg-[var(--color-danger)]/10 px-3.5 py-2.5 text-xs text-[var(--color-danger)]"
+        >
+          <TriangleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+          <span>{saveError}</span>
+        </div>
+      ) : null}
 
       {/* Mobile panel switch */}
       <div className="mb-3 flex gap-1.5 lg:hidden">
@@ -499,7 +587,7 @@ export default function EditorPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--color-ink-3)]">
         <span>
-          草稿保存在本机 IndexedDB，仅为防止刷新丢失；正式数据始终是 Git 中的 Markdown。
+          正式数据保存在服务器（Cloudflare D1）；本地 IndexedDB 草稿仅为防止刷新丢失。
         </span>
         <Button variant="ghost" size="sm" onClick={() => navigate('/cards')}>
           查看已发布卡片

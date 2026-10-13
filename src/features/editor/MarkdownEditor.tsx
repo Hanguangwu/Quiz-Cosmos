@@ -20,7 +20,7 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search'
 import { cn } from '@/lib/cn'
 
 /**
- * CodeMirror 6 Markdown editor (design-plan §21, AGENTS.md §13).
+ * CodeMirror 6 Markdown editor (AGENTS.md §13).
  *
  * Deliberately unopinionated about chrome — the surrounding layout and styling
  * belong to the page; this component only owns text editing.

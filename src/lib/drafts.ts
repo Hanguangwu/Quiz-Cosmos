@@ -1,7 +1,7 @@
 /**
  * Local edit drafts — IndexedDB, and NOTHING else.
  *
- * Hard rule (AGENTS.md §3): Markdown in Git is the only source of truth. This
+ * Hard rule (AGENTS.md §3): Cloudflare D1 is the only source of truth. This
  * module is a scratchpad for the editor so a reload does not lose typing. A
  * draft is never authoritative: `isStaleDraft` exists precisely so the UI can
  * tell the user "you have local changes that differ from the published card".

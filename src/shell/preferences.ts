@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from 'react'
  * Reader preferences kept in localStorage: the app chrome appearance and the
  * default card theme.
  *
- * These are *preferences*, not data. Knowledge content always comes from
- * `index.json` (design-plan §5, AGENTS.md §3).
+ * These are *preferences*, not data. Knowledge content always comes from the
+ * D1-backed API via `src/lib/content.ts`.
  */
 
 const APPEARANCE_KEY = 'kc:appearance'

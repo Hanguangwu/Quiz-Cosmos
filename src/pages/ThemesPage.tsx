@@ -10,7 +10,7 @@ import { THEME_CATEGORIES, THEME_CATEGORY_LABELS, type ThemeDefinition } from '@
 import { cn } from '@/lib/cn'
 
 /**
- * Theme gallery (design-plan §18–19, §26, AGENTS.md §26).
+ * Theme gallery (AGENTS.md §26).
  *
  * Every swatch is a *live* preview rendered by the real card component through
  * the Theme Engine, so what a reader sees here is what they get. Adding a

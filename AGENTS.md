@@ -1,14 +1,16 @@
-1. # AGENTS.md
+# AGENTS.md
 
    ## 项目名称
 
-   Knowledge Cards —— Markdown 驱动的个人知识卡片库。
+   Knowledge Cards —— 云端数据库驱动的个人知识卡片库。
 
-   本项目是一个纯前端、无后端、无云端数据库的个人知识管理与展示系统。
+   本项目是一个「公开阅读、密码编辑」的个人知识管理与展示系统：
+   前端 React 部署在 Cloudflare Pages，数据存储在 Cloudflare D1，
+   读写由 Pages Functions API 提供。
 
    核心思想：
 
-   > Markdown 是唯一正式数据源，React 是展示层，JSON 是构建索引，Git 是版本控制。
+   > 数据属于 D1，展示属于 React，视觉属于主题引擎。读取公开，写入需要密码。
 
    ------
 
@@ -16,13 +18,12 @@
 
    项目需要实现：
 
-   - Markdown 知识内容管理
    - QA 类型知识卡片
    - Markdown 实时预览
    - KaTeX 数学公式
    - GFM
    - 代码高亮
-   - 搜索
+   - 搜索（纯前端）
    - 标签筛选
    - 分类浏览
    - 卡片正反面展示
@@ -31,8 +32,9 @@
    - PNG/JPG/WebP/SVG 导出
    - 响应式设计
    - PWA
-   - Android / Capacitor 兼容
-   - GitHub Pages 部署
+   - Android / Capacitor 兼容（PWA 优先，不单独重写 UI）
+   - Cloudflare Pages 部署（Functions + D1 + KV）
+   - 密码保护的增删改（网页端编辑器）
 
    ------
 
@@ -41,30 +43,32 @@
    必须遵守：
 
    ```text
-   Markdown → Parser → Renderer → Theme → Card → Export
+   D1 → Functions API → React → ( Search | Theme | Card ) → Export
    ```
 
-   不得引入不必要的后端服务。
+   读取公开；新增、修改、删除与复习记录需要登录。写入只允许通过
+   API（Bearer 会话 token），前端永不直连 D1。
 
    默认情况下：
 
-   - 不使用数据库服务器
-   - 不使用云端 API
-   - 不依赖登录系统
+   - 不引入 D1 / KV / Pages 之外的云服务
    - 不依赖第三方内容 API
+   - 不引入 AI API
+   - 不做实时同步 / WebSocket
    - 不把 IndexedDB 当作正式数据源
 
    ------
 
    ## 三、数据源原则
 
-   正式知识数据必须保存在：
+   正式知识数据保存在 Cloudflare D1：
 
    ```text
-   content/**/*.md
+   cards / tags / card_tags / card_reviews
    ```
 
-   Markdown + YAML Front Matter 是正式数据格式。
+   D1 是唯一正式数据源。卡片的 question / answer 以 Markdown 存储，
+   编辑器仍以 Markdown + Front Matter 编辑，但保存目标只有 D1。
 
    IndexedDB 只能用于：
 
@@ -76,34 +80,34 @@
 
    ------
 
-   ## 四、Markdown 数据规范
+   ## 四、数据规范
 
-   每张知识卡必须具有：
+   每张卡（cards 表）必须具有：
 
-   ```yaml
-   ---
-   schemaVersion: 1
-   id: unique-id
-   type: qa
-   title: title
-   category: category
-   tags:
-     - tag
-   status: published
-   ---
+   ```text
+   id          唯一业务 ID（TEXT）
+   type        qa
+   title       标题
+   category    分类
+   tags        标签（多对多，tags + card_tags）
+   status      published 等
+   question    正面 Markdown
+   answer      背面 Markdown
    ```
 
    可选字段：
 
-   ```yaml
-   subcategory:
-   difficulty:
-   theme:
-   aliases:
-   related:
-   created:
-   updated:
+   ```text
+   subcategory
+   difficulty
+   theme
+   aliases
+   related
+   sort_order
    ```
+
+   数据库结构以 `migrations/` 下的 SQL 为唯一出处。表结构变更必须新增
+   迁移文件并同步升级 schemaVersion（当前 v1）。
 
    ------
 
@@ -125,7 +129,7 @@
    history-ming-001
    ```
 
-   禁止重复 ID。
+   禁止重复 ID。写入 API 必须校验 ID 唯一性。
 
    ------
 
@@ -142,46 +146,29 @@
 
    只有：
 
-   ```yaml
+   ```text
    status: published
    ```
 
-   的内容默认进入公开索引。
+   的内容默认进入公开浏览（首页、分类、标签、搜索）。
 
    ------
 
    ## 七、目录结构
 
-   推荐：
-
    ```text
-   content/
-   ├── ai/
-   ├── programming/
-   ├── history/
-   ├── philosophy/
-   └── other/
-   ```
-
-   资源：
-
-   ```text
-   assets/
-   ├── images/
-   ├── fonts/
-   └── attachments/
-   ```
-
-   源码：
-
-   ```text
+   functions/api/     Pages Function（REST API + 密码鉴权）
+   migrations/        D1 schema SQL（唯一表结构出处，勿删）
+   scripts/           generate-icons.ts（PWA 图标）
+   public/            图标、favicon
    src/
-   ├── components/
-   ├── pages/
-   ├── features/
-   ├── lib/
-   ├── types/
-   └── styles/
+   ├── features/      cards / markdown / themes / editor / search / export
+   ├── lib/           api / auth / content / search / export / drafts
+   ├── pages/         路由页面
+   ├── shell/         应用外壳与阅读偏好
+   ├── ui/            shadcn 风格基础组件
+   ├── styles/        tokens.css（设计变量 + 卡片样式）
+   └── types/         数据契约
    ```
 
    ------
@@ -203,6 +190,15 @@
    - rehype-katex
    - rehype-prism-plus
    - CodeMirror 6
+   - Fuse.js
+   - html2canvas
+
+   云端：
+
+   - Cloudflare Pages（Pages Functions）
+   - Cloudflare D1
+   - Cloudflare KV
+   - wrangler CLI
 
    新增依赖前，应确认是否确实有必要。
 
@@ -305,6 +301,9 @@
 
    编辑器不应强制使用与展示端完全相同的 UI。
 
+   复习记录（card_reviews 的 known / unknown 计数）与卡片本身分离存储，
+   按 (card_id, user_key) 聚合，只作为阅读侧的个人进度。
+
    ------
 
    ## 十三、编辑器
@@ -322,6 +321,12 @@
    ```
 
    Markdown 修改后应尽可能即时更新 Preview。
+
+   持久化约定：
+
+   - 草稿存 IndexedDB，刷新不丢失
+   - 「保存」调用 API 写入 D1，需要登录（编辑密码）
+   - 「下载 .md」只是备份便利，不是发布路径——正式数据始终在 D1
 
    ------
 
@@ -349,11 +354,8 @@
 
    ## 十五、搜索
 
-   搜索数据来自：
-
-   ```text
-   index.json
-   ```
+   搜索数据来自加载到内存的知识索引，由 `GET /api/cards` 一次性构建
+   （`src/lib/content.ts` 适配为 KnowledgeIndex 形状）。
 
    搜索至少支持：
 
@@ -361,56 +363,60 @@
    - tags
    - category
    - aliases
-   - content
+   - content（question + answer）
    - id
 
-   搜索实现应优先保持纯前端。
+   搜索实现保持纯前端（Fuse.js）：不上传任何查询，不请求服务器搜索。
 
    ------
 
-   ## 十六、Index
+   ## 十六、API 契约
 
-   构建过程中生成：
+   后端由 `functions/api/[[proxy]].js` 单文件实现方法级路由：
 
    ```text
-   index.json
+   GET    /api/cards               公开：已发布卡片 + 聚合
+   GET    /api/cards/:id           公开
+   GET    /api/tags                公开
+   GET    /api/categories          公开
+   POST   /api/login               密码 → 会话 token
+   POST   /api/logout              注销
+   POST   /api/cards               需要登录
+   PUT    /api/cards/:id           需要登录（整卡替换）
+   DELETE /api/cards/:id           需要登录（软删除 deleted_at）
+   POST   /api/cards/:id/review    需要登录（known / unknown）
+   GET    /api/reviews             需要登录
    ```
 
-   索引包含：
+   约定：
 
-   - id
-   - title
-   - category
-   - tags
-   - status
-   - difficulty
-   - aliases
-   - related
-   - searchable text
-
-   不应该为了搜索在运行时请求服务器。
+   - 读取公开，写入鉴权；未授权返回 401，前端引导登录
+   - 密码校验使用恒定时间比较，任何接口不得返回明文密码
+   - 删除一律软删除，公开接口过滤 `deleted_at IS NOT NULL`
+   - 写卡时按名称 upsert tags 并重建 card_tags（标签同步）
+   - 卡片 JSON：`{ id, type, title, question, answer, category, subcategory,
+     difficulty, status, theme, tags[], aliases[], related[], sort_order,
+     created_at, updated_at }`
 
    ------
 
-   ## 十七、GitHub Pages
+   ## 十七、部署
 
-   部署流程：
+   部署目标是 Cloudflare Pages（Functions + D1 + KV），从域名根路径 `/` 提供服务。
 
    ```text
    git push
     ↓
-   GitHub Actions
+   Cloudflare Pages 构建（tsc -b && vite build）
     ↓
-   validate-content
-    ↓
-   build-index
-    ↓
-   vite build
-    ↓
-   GitHub Pages
+   部署（静态资源 + Functions）
    ```
 
-   所有公开内容必须能够在没有后端服务器的情况下正常运行。
+   - `dist/` 由 Pages 托管，`/api/*` 由 Functions 处理
+   - 不要添加顶层 `404.html`——SPA 回退交给 Pages 自动处理
+   - D1 / KV 绑定在 Pages 项目配置中进行（wrangler.jsonc 仅用于本地开发）
+   - `APP_SECRET_KEY` 通过 `wrangler pages secret put` 配置
+   - 首次部署完整步骤见 `DEPLOY.md`
 
    ------
 
@@ -425,23 +431,27 @@
    - app icon
    - responsive UI
 
-   不得假设用户始终在线。
-
-   ------
-
-   ## 十九、Android
+   离线只需保证应用外壳可用；实时卡片数据依赖网络。不要把 API 响应
+   当作离线缓存，也不要假设用户始终在线。
 
    Android 目标采用：
 
    ```text
-   React
-   +
-   PWA
-   +
-   Capacitor
+   React + PWA + Capacitor
    ```
 
    不要为了 Android 单独重写 UI。
+
+   ------
+
+   ## 十九、权限与会话
+
+   - 单一共享编辑密码（`APP_SECRET_KEY`），不做用户体系
+   - 登录：`POST /api/login` 校验密码后签发随机 token，写入 KV
+     （`QUIZ_SESSIONS`，TTL 7 天）
+   - 前端保存 token，写入请求携带 `Authorization: Bearer <token>`
+   - 注销即删除 KV 会话，前端同时清除本地 token
+   - token 与密码不得写入任何日志；不依赖 Cookie
 
    ------
 
@@ -481,13 +491,11 @@
 
    ## 二十一、数据迁移
 
-   必须保持 Markdown 数据可迁移。
+   保持知识内容可迁移：
 
-   不得把核心知识内容锁定在：
-
-   - 私有数据库
-   - 二进制格式
-   - 专有云服务
+   - D1 是运行时唯一来源，但内容格式是 Markdown（question / answer 列）
+   - 编辑器「下载 .md」与导出功能是退出路径，不允许被移除
+   - 不得把核心知识内容锁定在二进制格式或专有云服务
 
    未来应能够迁移到其他 Markdown 工具。
 
@@ -516,16 +524,16 @@
 
    ## 二十三、不要过度工程化
 
-   第一版本禁止为了“未来可能需要”而提前加入：
+   第一版本禁止为了"未来可能需要"而提前加入：
 
-   - 用户系统
+   - 用户系统（共享密码已足够）
    - 权限系统
-   - 云数据库
+   - 除 D1 / KV / Pages 之外的新存储
    - 多用户协作
    - 实时同步
    - WebSocket
-   - 后端 API
    - AI API
+   - 额外的后端服务
 
    除非需求明确改变。
 
@@ -552,7 +560,7 @@
    1. 先理解现有架构
    2. 尽量复用现有组件
    3. 不随意改变数据格式
-   4. 如果必须改变数据格式，应升级 schemaVersion
+   4. 如果必须改变数据格式，应升级 schemaVersion 并新增 migration
    5. 优先保持向后兼容
    6. 不要复制大量重复组件
 
@@ -577,16 +585,12 @@
 
    新增知识卡片时：
 
-   1. 创建 Markdown 文件
-   2. 填写 Front Matter
-   3. 设置唯一 ID
-   4. 设置 category
-   5. 设置 tags
-   6. 设置 status
-   7. 使用 Markdown 编写内容
-   8. 执行内容校验
-   9. 构建 index
-   10. 确认页面正常
+   1. 登录（编辑密码）
+   2. 打开编辑器，填写 Front Matter（唯一 ID、分类、标签、状态）与正反面
+   3. 点击「保存」写入 D1（必须走 API，不直连数据库）
+   4. 验证公开侧可见：列表、分类、标签、搜索均正常
+
+   每张卡必须有唯一 ID，禁止重复；只有 `status: published` 进入公开索引。
 
    ------
 
@@ -620,7 +624,7 @@
    - 图片自适应
    - 卡片翻面可操作
    - 导出按钮易于触摸
-   - 编辑器可以使用
+   - 登录与编辑器可使用
 
    ------
 
@@ -629,29 +633,19 @@
    整个项目始终保持：
 
    ```text
-   Git
+   Cloudflare Pages
     │
-    └── Markdown
-          │
-          ├── Metadata
-          │
-          └── Content
-                 │
-                 ▼
-             Build Index
-                 │
-                 ▼
-               React
-                 │
-          ┌──────┼──────┐
-          ▼      ▼      ▼
-        Search  Theme  Card
-                        │
-                 ┌──────┼──────┐
-                 ▼      ▼      ▼
-                Web     PWA   Export
+    ├── Functions（REST API + 密码鉴权）
+    │     ├── D1   （卡片 / 标签 / 复习 —— 唯一数据源）
+    │     └── KV   （会话 token）
+    │
+    └── React
+          ├── Search   Theme   Card
+          │                     │
+          │            Web · PWA · Export
    ```
 
    核心原则：
 
-   > **数据属于 Markdown，版本属于 Git，索引属于构建系统，展示属于 React，视觉属于 Theme Engine。**
+   > 数据属于 D1，展示属于 React，部署属于 Cloudflare Pages。
+   > 读取公开，写入需要密码；内容以 Markdown 格式保存，永远可迁移。

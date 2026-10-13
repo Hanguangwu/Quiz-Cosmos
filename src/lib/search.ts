@@ -1,5 +1,5 @@
 /**
- * Client-side search over `public/index.json` (AGENTS.md §15).
+ * Client-side search over the in-memory knowledge index (AGENTS.md §15).
  *
  * Fuse.js does the fuzzy text matching; facet filters are applied afterwards as
  * exact predicates, so `category / tag / difficulty / status` combine with AND

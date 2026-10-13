@@ -10,7 +10,7 @@ import { useCardThemePreference } from '@/shell/preferences'
 import { STATUS_LABELS } from '@/types'
 
 /**
- * Card browser (design-plan §13 `/cards`). Defaults to published cards only —
+ * Card browser (`/cards`). Defaults to published cards only —
  * `status: published` is the gate for the public index (AGENTS.md §6).
  */
 export default function CardsPage() {
@@ -64,7 +64,7 @@ export default function CardsPage() {
         <EmptyState
           icon={<Library className="size-8" />}
           title="没有匹配的卡片"
-          description="调整筛选条件，或在 content/**/*.md 中添加新卡片。"
+          description="调整筛选条件，或打开编辑器新建卡片。"
           action={
             <Button asChild variant="outline" size="sm">
               <Link to="/">返回总览</Link>

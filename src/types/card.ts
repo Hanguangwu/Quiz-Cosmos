@@ -92,7 +92,7 @@ export interface KnowledgeCard extends CardFrontMatter {
   answer: string
   /** True when the body actually produced a back side (answer is non-empty). */
   hasAnswer: boolean
-  /** Repo-relative source path, e.g. `content/programming/os/os-001.md`. */
+  /** Label of the parsed document (editor pseudo-filename or card id). */
   sourcePath: string
 }
 

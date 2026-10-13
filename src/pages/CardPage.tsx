@@ -21,7 +21,7 @@ import { STATUS_LABELS } from '@/types'
  * export sheet — the Markdown source moved to the editor long ago, because the
  * editor is where a source is actually owned.
  *
- * READING MODE (design-plan §12, §22)
+ * READING MODE
  * -----------------------------------
  * One card, two ways to read it, and the page owns the choice:
  *

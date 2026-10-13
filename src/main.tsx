@@ -6,10 +6,11 @@ import './styles/index.css'
 /**
  * Browser entry point.
  *
- * The app is a pure static client: there is no server, no auth and no API.
- * All knowledge arrives as one `public/index.json` fetch that
- * `KnowledgeProvider` performs, so the only real boot requirement is the CSS
- * having settled before first paint to avoid a flash of unstyled card.
+ * The app is a client for the Cloudflare Pages Function API: reading is
+ * public, writing requires the edit password. All knowledge arrives as one
+ * `GET /api/cards` fetch that `KnowledgeProvider` performs, so the only real
+ * boot requirement is the CSS having settled before first paint to avoid a
+ * flash of unstyled card.
  */
 const container = document.getElementById('root')
 

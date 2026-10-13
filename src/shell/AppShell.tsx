@@ -4,6 +4,8 @@ import {
   Home,
   LayoutGrid,
   Library,
+  LogIn,
+  LogOut,
   Moon,
   Palette,
   PlayCircle,
@@ -15,12 +17,13 @@ import {
 } from 'lucide-react'
 import { Button, Sheet, TooltipContent, TooltipProvider, TooltipRoot, TooltipTrigger } from '@/ui'
 import { SITE } from '@/lib/site'
+import { useAuth } from '@/lib/auth'
 import { useKnowledge } from '@/lib/knowledge-context'
 import { useAppearance } from './preferences'
 import { cn } from '@/lib/cn'
 
 /**
- * Application chrome (design-plan §41–43).
+ * Application chrome.
  *
  * Desktop: fixed sidebar + scrolling content. Mobile: top bar + bottom
  * navigation. The shell never renders knowledge content itself — it hands off
@@ -125,6 +128,33 @@ function NavItems({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
   )
 }
 
+function AuthControl() {
+  const { isAuthed, logout } = useAuth()
+  const navigate = useNavigate()
+
+  if (isAuthed) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="退出登录"
+        onClick={() => {
+          void logout()
+          navigate('/')
+        }}
+      >
+        <LogOut />
+      </Button>
+    )
+  }
+
+  return (
+    <Button variant="ghost" size="icon-sm" aria-label="登录以编辑" onClick={() => navigate('/login')}>
+      <LogIn />
+    </Button>
+  )
+}
+
 function Brand() {
   return (
     <Link to="/" className="flex items-center gap-2.5">
@@ -154,7 +184,10 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
         <span className="text-xs text-[var(--color-ink-3)]">
           {index ? `${index.total} 张卡片` : '载入中…'}
         </span>
-        <AppearanceToggle />
+        <div className="flex items-center gap-1">
+          <AuthControl />
+          <AppearanceToggle />
+        </div>
       </div>
     </div>
   )
@@ -212,7 +245,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <SidebarBody onNavigate={() => setMenuOpen(false)} />
       </Sheet>
 
-      {/* Mobile bottom navigation (design-plan §42) */}
+      {/* Mobile bottom navigation */}
       <nav className="kc-safe-b fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-[var(--color-line)] bg-[var(--color-surface)]/92 px-1 pt-1.5 backdrop-blur lg:hidden">
         {MOBILE.map(({ to, label, icon: Icon, end }) => (
           <NavLink

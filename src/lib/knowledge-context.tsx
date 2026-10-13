@@ -1,10 +1,11 @@
 /**
  * Knowledge data context.
  *
- * The app is static: everything it knows comes from `public/index.json`. This
- * provider loads it once, exposes a slug lookup table and — crucially — never
- * throws. A missing or broken index must degrade to a readable error panel, not
- * a blank screen (AGENTS.md §18: the app must not assume it is online).
+ * Card data is fetched once from the D1-backed API (`/api/cards`, public) and
+ * adapted into the app's `KnowledgeIndex` shape. This provider exposes a slug
+ * lookup table and — crucially — never throws. A missing or broken index must
+ * degrade to a readable error panel, not a blank screen (the app must not
+ * assume it is online).
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
@@ -48,7 +49,7 @@ function DefaultError({ message, reload }: { message: string; reload: () => void
       <p style={{ fontWeight: 600 }}>知识索引加载失败</p>
       <p>{message}</p>
       <p>
-        请确认已执行 <code>pnpm run build:index</code> 生成 public/index.json。
+        请确认站点已部署 Cloudflare Pages Functions（/api/cards 可达），然后重试。
       </p>
       <button type="button" onClick={reload}>
         重新加载

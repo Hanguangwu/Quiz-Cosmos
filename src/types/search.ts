@@ -1,10 +1,9 @@
 /**
- * Build-time search index contracts.
+ * In-memory index contracts, built at runtime from the D1-backed API.
  *
- * `public/index.json` is produced by `scripts/build-index.ts` from every
- * Markdown file under `content/` and is the app's only runtime data source. Card
- * markdown is embedded in the index so the app is fully static and offline
- * capable (no per-card network fetch, no runtime API).
+ * `loadIndex()` (`src/lib/content.ts`) fetches `GET /api/cards` once and adapts
+ * the response into `KnowledgeIndex` so the UI layers never talk to the API
+ * directly. Search runs in the browser (Fuse.js) over this in-memory index.
  */
 
 import type { CardFrontMatter, CardStatus, Difficulty } from './card'

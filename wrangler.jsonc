@@ -1,0 +1,36 @@
+{
+	// Cloudflare Pages 配置（Quiz-Cosmos）。
+	//
+	// 部署：Cloudflare Pages 连接本仓库，构建命令 `pnpm run build`，输出目录 `dist`。
+	// Pages Functions 位于 functions/ 下，随站点一起发布（见 functions/api/[[proxy]].js）。
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "quiz-cosmos",
+	"pages_build_output_dir": "dist",
+	"compatibility_date": "2025-10-01",
+	// 创建：wrangler d1 create quiz-cosmos-db
+	// 然后把真实的 database_id 填到下面。
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "quiz-cosmos-db",
+			"database_id": "16789f67-1086-48cc-a29c-a5323bf8f392"
+		},
+		{
+			"binding": "quiz_cosmos_db",
+			"database_name": "quiz-cosmos-db",
+			"database_id": "16789f67-1086-48cc-a29c-a5323bf8f392",
+			"remote": true
+		}
+	],
+	// 创建：wrangler kv namespace create QUIZ_SESSIONS
+	// 然后把真实的 id 填到下面。用于存放登录会话 token（TTL 7 天）。
+	"kv_namespaces": [
+		{
+			"binding": "QUIZ_SESSIONS",
+			"id": "7ad4635e14d844d38c1542d6d773b3d8"
+		}
+	]
+	// APP_SECRET_KEY 不写在这里（避免进 git）。它是 Secret：
+	//   wrangler pages secret put APP_SECRET_KEY
+	// 或在 Cloudflare Pages 控制台 > Settings > Environment variables 添加。
+}

@@ -12,8 +12,8 @@ import { cn } from '@/lib/cn'
 
 /**
  * Search page (`/search`). Query state lives in the URL, so a search is
- * shareable. Text search runs client-side over the build-time index through
- * Fuse.js — no server round trip (design-plan §15, AGENTS.md §15).
+ * shareable. Text search runs client-side over the in-memory index through
+ * Fuse.js — no server round trip (AGENTS.md §15).
  */
 export default function SearchPage() {
   const { index, loading } = useKnowledge()
@@ -140,7 +140,7 @@ export default function SearchPage() {
       )}
 
       <p className="mt-8 text-center text-xs text-[var(--color-ink-3)]">
-        搜索完全在浏览器内完成，数据来自构建期生成的 index.json，{SITE.name} 不上传任何查询。
+        搜索完全在浏览器内完成，卡片数据实时读取自 Cloudflare D1，{SITE.name} 不上传任何查询。
       </p>
     </div>
   )

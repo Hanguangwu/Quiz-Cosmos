@@ -1,12 +1,12 @@
-/** Site-wide constants. Content lives in `content/**`, this is only chrome text. */
+/** Site-wide constants. Card data lives in Cloudflare D1; this is only chrome text. */
 
 export const SITE = {
   name: '知库',
   nameLatin: 'Knowledge Cards',
-  tagline: 'Markdown 驱动的个人知识卡片库',
-  description: '用 Markdown 与 Git 承载知识，用卡片的方式阅读、复习与导出。',
-  /** GitHub Pages subpath — must match `base` in vite.config.ts. */
-  base: '/Quiz-Cosmos/',
+  tagline: '以 Markdown 书写，用卡片的方式阅读与复习',
+  description: '卡片数据存储在云端数据库（Cloudflare D1），公开阅读，登录后可编辑。',
+  /** Deployment base path, injected by Vite from `base` in vite.config.ts. */
+  base: import.meta.env.BASE_URL,
   repository: '',
 } as const
 

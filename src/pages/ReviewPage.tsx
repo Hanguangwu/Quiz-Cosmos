@@ -5,15 +5,17 @@ import { PageHeader } from '@/shell/AppShell'
 import { KnowledgeCard } from '@/features/cards'
 import { Button, EmptyState, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@/ui'
 import { useKnowledge } from '@/lib/knowledge-context'
+import { useAuth } from '@/lib/auth'
+import { recordReview } from '@/lib/api'
 import { useCardThemePreference } from '@/shell/preferences'
 import type { IndexedCard } from '@/types'
 import { cn } from '@/lib/cn'
 
 /**
- * Review mode (design-plan §40, AGENTS.md §12).
+ * Review mode (AGENTS.md §12).
  *
  * Deliberately a *visual* Anki: flip through cards and mark 记得 / 忘了. No
- * spaced-repetition scheduler in v1 (AGENTS.md §23, §39) — the store is a
+ * spaced-repetition scheduler in v1 (AGENTS.md §23) — the store is a
  * plain local record, not a learning algorithm.
  */
 
@@ -56,6 +58,7 @@ function saveRecord(record: ReviewRecord): void {
 
 export default function ReviewPage() {
   const { index, loading } = useKnowledge()
+  const { token } = useAuth()
   const [themeId] = useCardThemePreference()
   const [scope, setScope] = useState<'all' | 'due'>('all')
   const [cursor, setCursor] = useState(0)
@@ -111,9 +114,15 @@ export default function ReviewPage() {
         saveRecord(next)
         return next
       })
+      // Persist to D1 when signed in; localStorage stays as the offline record.
+      if (token) {
+        void recordReview(current.id, verdict, token).catch(() => {
+          /* best effort — local record already updated */
+        })
+      }
       advance(1)
     },
-    [advance, current],
+    [advance, current, token],
   )
 
   // Keyboard: space flips, arrows navigate, 1/2 record a verdict.

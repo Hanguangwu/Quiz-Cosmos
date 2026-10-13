@@ -1,13 +1,15 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import type { ReactNode } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/lib/auth'
 import { KnowledgeProvider } from '@/lib/knowledge-context'
 import { SITE } from '@/lib/site'
 import { AppShell } from '@/shell/AppShell'
 import { Skeleton } from '@/ui'
 
 /**
- * The whole app is one shell plus twelve routes (design-plan §13).
- * `KnowledgeProvider` owns the single `index.json` fetch; pages read from it.
+ * The whole app is one shell plus twelve routes.
+ * `KnowledgeProvider` owns the single API-backed index load; pages read from it.
  *
  * Routes are split with `React.lazy` so each one lands in its own chunk: the
  * shell (router + provider + chrome) stays in the first chunk, while the heavy
@@ -27,6 +29,7 @@ const ReviewPage = lazy(() => import('@/pages/ReviewPage'))
 const EditorPage = lazy(() => import('@/pages/EditorPage'))
 const ThemesPage = lazy(() => import('@/pages/ThemesPage'))
 const AboutPage = lazy(() => import('@/pages/AboutPage'))
+const LoginPage = lazy(() => import('@/pages/LoginPage'))
 
 /** Route placeholder: reserves a page-height block so the shell never jumps. */
 function RouteFallback() {
@@ -37,31 +40,73 @@ function RouteFallback() {
   )
 }
 
+/**
+ * Login route: redirects away once authed, otherwise renders the login form
+ * wired to the auth context.
+ */
+function LoginRoute() {
+  const { login, isAuthed } = useAuth()
+  const navigate = useNavigate()
+  if (isAuthed) return <Navigate to="/editor" replace />
+  return (
+    <LoginPage
+      onLogin={async (password) => {
+        await login(password)
+        navigate('/editor', { replace: true })
+      }}
+    />
+  )
+}
+
+/** Gate for edit routes: browsing is public, editing needs a session. */
+function RequireAuth({ children }: { children: ReactNode }) {
+  const { isAuthed, login } = useAuth()
+  if (!isAuthed) return <LoginPage onLogin={login} />
+  return <>{children}</>
+}
+
 export default function App() {
   return (
     <BrowserRouter basename={SITE.base}>
-      <KnowledgeProvider>
-        <AppShell>
-          <Suspense fallback={<RouteFallback />}>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/cards" element={<CardsPage />} />
-              <Route path="/card/:slug" element={<CardPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/tags" element={<TagsPage />} />
-              <Route path="/tags/:tag" element={<TagPage />} />
-              <Route path="/categories" element={<CategoriesPage />} />
-              <Route path="/categories/:name" element={<CategoryPage />} />
-              <Route path="/review" element={<ReviewPage />} />
-              <Route path="/editor" element={<EditorPage />} />
-              <Route path="/editor/:slug" element={<EditorPage />} />
-              <Route path="/themes" element={<ThemesPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </Suspense>
-        </AppShell>
-      </KnowledgeProvider>
+      <AuthProvider>
+        <KnowledgeProvider>
+          <AppShell>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/cards" element={<CardsPage />} />
+                <Route path="/card/:slug" element={<CardPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/tags" element={<TagsPage />} />
+                <Route path="/tags/:tag" element={<TagPage />} />
+                <Route path="/categories" element={<CategoriesPage />} />
+                <Route path="/categories/:name" element={<CategoryPage />} />
+                <Route path="/review" element={<ReviewPage />} />
+                <Route path="/login" element={<LoginRoute />} />
+                <Route
+                  path="/editor"
+                  element={
+                    <RequireAuth>
+                      <EditorPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route
+                  path="/editor/:slug"
+                  element={
+                    <RequireAuth>
+                      <EditorPage />
+                    </RequireAuth>
+                  }
+                />
+                <Route path="/themes" element={<ThemesPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
+          </AppShell>
+        </KnowledgeProvider>
+      </AuthProvider>
     </BrowserRouter>
   )
 }

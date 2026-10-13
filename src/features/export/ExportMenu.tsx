@@ -29,7 +29,7 @@ import type { IndexedCard } from '@/types'
 import { cn } from '@/lib/cn'
 
 /**
- * Export surface (design-plan §24–25, AGENTS.md §20).
+ * Export surface (AGENTS.md §20).
  *
  * WHAT THE IMAGE SOURCE IS
  * ------------------------

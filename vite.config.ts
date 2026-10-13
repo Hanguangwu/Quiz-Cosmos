@@ -7,14 +7,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 /**
  * Build tooling for 知库 · Knowledge Cards.
  *
- * AGENTS.md §17 fixes the deployment order — validate → build-index → vite
- * build → GitHub Pages — and §18 requires a PWA that still opens offline. The
- * `base` below MUST stay in sync with `SITE.base` in `src/lib/site.ts`, because
- * that is what `KnowledgeProvider` prefixes onto the `index.json` fetch.
+ * Deploy order is tsc → vite build → Cloudflare Pages (Functions + D1 + KV),
+ * and §18 requires a PWA that still opens offline. `SITE.base` in
+ * `src/lib/site.ts` reads `import.meta.env.BASE_URL`, so it can no longer
+ * drift out of sync with `base` below.
  *
- * The offline shell is the whole point of precaching: a personal knowledge
- * base is useless on a train, so `index.json` (the only data the app reads)
- * and every chunk land in the precache manifest.
+ * The app shell and route chunks are precached so the shell opens offline;
+ * live card data is fetched at runtime from the D1-backed API (`/api/cards`).
  */
 
 /** Root package of a path that is already relative to a `node_modules/`. */
@@ -125,8 +124,16 @@ const vendorChunks = [
   ),
 ]
 
+/**
+ * Deployment base path. Cloudflare Pages serves the site from the domain root,
+ * so the default is `/`. Set `VITE_BASE_PATH` to host under a sub-path instead.
+ * `SITE.base` in `src/lib/site.ts` reads the same value via
+ * `import.meta.env.BASE_URL`, and the PWA manifest/routes below derive from it.
+ */
+const base = process.env.VITE_BASE_PATH ?? '/'
+
 export default defineConfig({
-  base: '/Quiz-Cosmos/',
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -136,19 +143,19 @@ export default defineConfig({
       manifest: {
         name: '知库 · Knowledge Cards',
         short_name: '知库',
-        description: 'Markdown 驱动的个人知识卡片库：阅读、复习、导出。',
+        description: '个人知识卡片库：Markdown 书写，云端存储，卡片式阅读与复习。',
         lang: 'zh-CN',
-        start_url: '/Quiz-Cosmos/',
-        scope: '/Quiz-Cosmos/',
+        start_url: base,
+        scope: base,
         display: 'standalone',
         orientation: 'any',
         background_color: '#070a12',
         theme_color: '#070a12',
         icons: [
-          { src: '/Quiz-Cosmos/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/Quiz-Cosmos/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: `${base}icons/icon-192.png`, sizes: '192x192', type: 'image/png' },
+          { src: `${base}icons/icon-512.png`, sizes: '512x512', type: 'image/png' },
           {
-            src: '/Quiz-Cosmos/icons/maskable-512.png',
+            src: `${base}icons/maskable-512.png`,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
@@ -157,7 +164,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,json,svg,png,webp,woff,woff2}'],
-        navigateFallback: '/Quiz-Cosmos/index.html',
+        navigateFallback: `${base}index.html`,
       },
     }),
   ],

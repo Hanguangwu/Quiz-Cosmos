@@ -10,7 +10,7 @@ import { filterCards } from '@/features/search/FilterBar'
 import { cn } from '@/lib/cn'
 
 /**
- * Tag and category browsers (design-plan §16–17).
+ * Tag and category browsers.
  *
  * Tags and categories are deliberately separate: a category answers "what field
  * is this?", a tag answers "which concept does this card touch?".

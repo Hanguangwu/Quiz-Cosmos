@@ -8,7 +8,7 @@ import { useKnowledge } from '@/lib/knowledge-context'
 import { useCardThemePreference } from '@/shell/preferences'
 
 /**
- * Dashboard (design-plan §14): a knowledge-base overview, not a blog feed —
+ * Dashboard: a knowledge-base overview, not a blog feed —
  * counts, a "continue learning" shelf, and a category browser.
  */
 
@@ -74,8 +74,8 @@ export default function HomePage() {
     return (
       <EmptyState
         icon={<Library className="size-8" />}
-        title="索引尚未生成"
-        description="运行 pnpm run build:index 生成 index.json，或执行 pnpm build 完成构建。"
+        title="卡片加载失败"
+        description="无法从知识库 API 读取卡片，请稍后重试，或检查网络连接。"
       />
     )
   }
@@ -84,7 +84,7 @@ export default function HomePage() {
     <div>
       <PageHeader
         title="总览"
-        description="Markdown 是唯一数据源，Git 负责版本，构建期生成索引。"
+        description="数据实时读取自 Cloudflare D1，公开阅读、登录后可编辑。"
         actions={
           <>
             <Button asChild variant="outline" size="sm">
@@ -126,7 +126,7 @@ export default function HomePage() {
         {recent.length === 0 ? (
           <EmptyState
             title="还没有已发布的卡片"
-            description="在 content/**/*.md 中添加第一张知识卡片，然后运行 pnpm run build:index。"
+            description="登录后打开编辑器，创建第一张知识卡片并保存。"
             action={
               <Button asChild variant="primary" size="sm">
                 <Link to="/editor">

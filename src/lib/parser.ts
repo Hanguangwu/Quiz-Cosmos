@@ -7,9 +7,9 @@
  * - It is the only place allowed to decide "missing" vs "present": the returned
  *   front matter is fully normalised (`string | null`, `string[]`, never
  *   `undefined`), so every downstream consumer can rely on the shape.
- * - The same module is used at build time (`scripts/validate-content.ts`,
- *   `scripts/build-index.ts`) and at runtime (editor / preview), so validation
- *   can never drift from what the app is able to render.
+ * - The same module is used wherever Markdown must become a `KnowledgeCard`
+ *   (editor / preview / API seeding), so parsing never drifts from what the
+ *   app is able to render.
  * - Front matter is split by a plain regex and the YAML block is handed to the
  *   `yaml` package. Both are isomorphic: `gray-matter` was Node-only (it calls
  *   `Buffer.from()` unconditionally) and threw `ReferenceError: Buffer is not
