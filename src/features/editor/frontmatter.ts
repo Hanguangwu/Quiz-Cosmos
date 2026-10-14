@@ -31,8 +31,8 @@ function scalar(value: string): string {
   return `"${trimmed.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, ' ')}"`
 }
 
-function list(key: string, values: readonly string[]): string[] {
-  if (values.length === 0) return []
+function list(key: string, values: readonly string[], alwaysEmit = false): string[] {
+  if (values.length === 0) return alwaysEmit ? [`${key}: []`] : []
   return [`${key}:`, ...values.map((value) => `  - ${scalar(value)}`)]
 }
 
@@ -48,7 +48,10 @@ export function serializeFrontMatter(front: CardFrontMatter): string {
   ]
 
   if (front.subcategory) lines.push(`subcategory: ${scalar(front.subcategory)}`)
-  lines.push(...list('tags', front.tags))
+  // `tags` is a required field: always emit it (matching `serializeCard` in
+  // src/lib/parser.ts) so the editor template already contains the key and the
+  // author only fills in values.
+  lines.push(...list('tags', front.tags, true))
   if (front.difficulty) lines.push(`difficulty: ${front.difficulty}`)
   lines.push(`status: ${front.status}`)
   if (front.theme) lines.push(`theme: ${scalar(front.theme)}`)

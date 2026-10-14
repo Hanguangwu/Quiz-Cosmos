@@ -15,6 +15,9 @@ dist-ssr
 # Local Wrangler state (Pages Functions bundling)
 .wrangler
 
+# md-to-cards working directory (intermediate cards + generated SQL)
+.cards/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
