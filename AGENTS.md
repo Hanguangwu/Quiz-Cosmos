@@ -35,6 +35,7 @@
    - Android / Capacitor 兼容（PWA 优先，不单独重写 UI）
    - Cloudflare Pages 部署（Functions + D1 + KV）
    - 密码保护的增删改（网页端编辑器）
+   - 间隔复习系统（FSRS）：翻卡复习、成长看板、闪卡管理器、学习宠物
 
    ------
 
@@ -64,7 +65,7 @@
    正式知识数据保存在 Cloudflare D1：
 
    ```text
-   cards / tags / card_tags / card_reviews
+   cards / tags / card_tags / card_reviews / card_schedule / review_log
    ```
 
    D1 是唯一正式数据源。卡片的 question / answer 以 Markdown 存储，
@@ -107,7 +108,8 @@
    ```
 
    数据库结构以 `migrations/` 下的 SQL 为唯一出处。表结构变更必须新增
-   迁移文件并同步升级 schemaVersion（当前 v1）。
+   迁移文件，并评估 front matter 的 schemaVersion 是否要升级（当前 v1，
+   只有卡片 front matter 变更才需要升级；纯新增表不需要，见 §31）。
 
    ------
 
@@ -159,11 +161,12 @@
    ```text
    functions/api/     Pages Function（REST API + 密码鉴权）
    migrations/        D1 schema SQL（唯一表结构出处，勿删）
-   scripts/           generate-icons.ts（PWA 图标）
+   scripts/           generate-icons.ts / cards-to-sql.ts（PWA 图标 / 卡片转 SQL）
    public/            图标、favicon
    src/
    ├── features/      cards / markdown / themes / editor / search / export
-   ├── lib/           api / auth / content / search / export / drafts
+   │                  / review（音效）/ pet（学习宠物）
+   ├── lib/           api / auth / content / search / export / drafts / duration
    ├── pages/         路由页面
    ├── shell/         应用外壳与阅读偏好
    ├── ui/            shadcn 风格基础组件
@@ -304,6 +307,9 @@
    复习记录（card_reviews 的 known / unknown 计数）与卡片本身分离存储，
    按 (card_id, user_key) 聚合，只作为阅读侧的个人进度。
 
+   复习评分已升级为四档 FSRS（again / hard / good / easy），到期时间由
+   服务端调度；known / unknown 作为兼容视图继续回写（见 §31）。
+
    ------
 
    ## 十三、编辑器
@@ -382,10 +388,14 @@
    POST   /api/login               密码 → 会话 token
    POST   /api/logout              注销
    POST   /api/cards               需要登录
+   POST   /api/cards/bulk          需要登录：批量删除（软删除）
    PUT    /api/cards/:id           需要登录（整卡替换）
    DELETE /api/cards/:id           需要登录（软删除 deleted_at）
-   POST   /api/cards/:id/review    需要登录（known / unknown）
+   POST   /api/cards/:id/review    需要登录（FSRS 评分）
    GET    /api/reviews             需要登录
+   GET    /api/review/session      需要登录：复习队列（到期 + 新卡）
+   GET    /api/review/manage       需要登录：闪卡管理器全量卡片
+   GET    /api/review/stats        需要登录：成长看板统计
    ```
 
    约定：
@@ -397,6 +407,32 @@
    - 卡片 JSON：`{ id, type, title, question, answer, category, subcategory,
      difficulty, status, theme, tags[], aliases[], related[], sort_order,
      created_at, updated_at }`
+
+   ------
+
+   ## 三十一、间隔复习系统（FSRS）
+
+   复习记录从「记得 / 忘了」升级为 FSRS 调度：每张卡独立维护到期时间与
+   记忆参数，到期才出现在复习队列里。目标：学过的都记住。
+
+   约定：
+
+   - **调度只在服务端算**。`ts-fsrs` 只被 Pages Function import，前端永远
+     不本地计算间隔 —— 避免多设备算出不同结果，也避免前端包膨胀。
+   - **评分四档**：`again` / `hard` / `good` / `easy`。旧的 `verdict:
+     known | unknown` 仍然接受，分别映射为 `good` / `again`，并继续回写
+     `card_reviews` 的计数（向后兼容）。
+   - **单表职责**：`card_schedule` 存每张卡的调度状态（含 user_key），
+     `review_log` 只存事件。看板的所有聚合值（热力图、连击、留存率）
+     都由 `review_log` 现算，不落冗余统计列。
+   - **user_key 恒为 `default_user`**。项目无用户体系（§19），所以云端
+     进度是跨设备共享的一份；这是「读取公开、写入需要密码」的必然结果，
+     不是 bug。要真正的多用户进度，先解决 §19 的用户体系。
+   - **学习宠物零存储**：形态由复习统计纯派生（`src/features/pet/pet.ts`），
+     不建 pet 表。任何排行榜 / 成长值都不要为此引入新表。
+   - 只有 `status: published` 且有答案的卡片才进复习队列（§6 / §16）。
+   - `ts-fsrs` 参数保持默认（FSRS-6 权重、保持度 0.9、关闭 fuzz），保证
+     同一输入同一输出，重放和测试才稳定。
 
    ------
 
@@ -635,14 +671,14 @@
    ```text
    Cloudflare Pages
     │
-    ├── Functions（REST API + 密码鉴权）
-    │     ├── D1   （卡片 / 标签 / 复习 —— 唯一数据源）
+    ├── Functions（REST API + 密码鉴权 + FSRS 调度）
+    │     ├── D1   （卡片 / 标签 / 复习 / 调度 / 流水 —— 唯一数据源）
     │     └── KV   （会话 token）
     │
     └── React
-          ├── Search   Theme   Card
-          │                     │
-          │            Web · PWA · Export
+          ├── Search   Theme   Card   Review
+          │                              │
+          │              Dashboard · Manager · Pet · Web · PWA · Export
    ```
 
    核心原则：

@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "icons": "tsx scripts/generate-icons.ts",
-    "cards:sql": "tsx scripts/cards-to-sql.ts"
+    "cards:sql": "tsx scripts/cards-to-sql.ts",
+    "pages:dev": "wrangler pages dev dist"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.0.0",
@@ -45,6 +46,7 @@
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
     "tailwind-merge": "^3.0.0",
+    "ts-fsrs": "^5.4.2",
     "yaml": "^2.9.1"
   },
   "devDependencies": {

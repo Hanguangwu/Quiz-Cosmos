@@ -175,24 +175,106 @@ export function listCategories(): Promise<{ categories: CategorySummary[] }> {
   return request('/categories')
 }
 
-export type ReviewVerdict = 'known' | 'unknown'
-
-export function recordReview(id: string, verdict: ReviewVerdict, token: string): Promise<void> {
-  return request(`/cards/${encodeURIComponent(id)}/review`, {
-    method: 'POST',
-    body: { verdict },
-    token,
-  })
-}
-
 export interface ReviewRow {
   card_id: string
   known_count: number
   unknown_count: number
-  last_verdict: ReviewVerdict | null
+  last_verdict: 'known' | 'unknown' | null
   last_reviewed_at: string
 }
 
 export function listReviews(token: string): Promise<{ reviews: ReviewRow[] }> {
   return request('/reviews', { token })
+}
+
+/* -------------------------------------------------------------------------- */
+/* 间隔复习（FSRS）                                                             */
+/* -------------------------------------------------------------------------- */
+
+export type ReviewRating = 'again' | 'hard' | 'good' | 'easy'
+
+/** ts-fsrs `State`：0 New · 1 Learning · 2 Review · 3 Relearning。 */
+export type ScheduleState = 'new' | 'learning' | 'review' | 'relearning'
+
+export interface CardSchedule {
+  due: string
+  stability: number
+  difficulty: number
+  elapsed_days: number
+  scheduled_days: number
+  learning_steps: number
+  reps: number
+  lapses: number
+  state: number
+  last_review: string | null
+}
+
+/** 四档下一次间隔，单位秒。学习步长是分钟级，所以不能按天格式化。 */
+export type ReviewIntervals = Record<ReviewRating, number>
+
+export interface ReviewCard extends ApiCard {
+  schedule: CardSchedule | null
+  due: string | null
+  overdue: boolean
+  /** 仅已调度卡片有：本次复习后四档间隔预览。 */
+  intervals?: ReviewIntervals
+}
+
+export interface ReviewSession {
+  now: string
+  dueCount: number
+  newCount: number
+  total: number
+  cards: ReviewCard[]
+}
+
+export interface ReviewStatsBucket {
+  date: string
+  count: number
+  ok: number | null
+}
+
+export interface ReviewStats {
+  now: string
+  heatmap: ReviewStatsBucket[]
+  forecast: ReviewStatsBucket[]
+  states: Record<ScheduleState, number>
+  streak: number
+  today: number
+  week: number
+  total: number
+  accuracy: number
+  retention: number
+  published: number
+  newCount: number
+}
+
+export function getReviewSession(token: string): Promise<ReviewSession> {
+  return request('/review/session', { token })
+}
+
+export function getReviewStats(token: string): Promise<ReviewStats> {
+  return request('/review/stats', { token })
+}
+
+/** 闪卡管理器用的全量卡片 + 调度状态。 */
+export function getManagedCards(token: string): Promise<{ now: string; total: number; cards: ReviewCard[] }> {
+  return request('/review/manage', { token })
+}
+
+export function bulkCards(ids: string[], action: 'delete', token: string): Promise<{ deleted: number }> {
+  return request('/cards/bulk', { method: 'POST', body: { ids, action }, token })
+}
+
+/** 记录一次复习。服务端据此跑 FSRS 并返回新的调度状态。 */
+export function reviewCard(
+  id: string,
+  rating: ReviewRating | 'known' | 'unknown',
+  token: string,
+): Promise<{ id: string; rating: number; schedule: CardSchedule; intervals: ReviewIntervals }> {
+  return request(`/cards/${encodeURIComponent(id)}/review`, {
+    method: 'POST',
+    body: { rating },
+    token,
+  })
 }

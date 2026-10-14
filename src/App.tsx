@@ -26,6 +26,8 @@ const TagPage = lazy(() => import('@/pages/TagPage'))
 const CategoriesPage = lazy(() => import('@/pages/CategoriesPage'))
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'))
 const ReviewPage = lazy(() => import('@/pages/ReviewPage'))
+const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const FlashcardManagerPage = lazy(() => import('@/pages/FlashcardManagerPage'))
 const EditorPage = lazy(() => import('@/pages/EditorPage'))
 const ThemesPage = lazy(() => import('@/pages/ThemesPage'))
 const AboutPage = lazy(() => import('@/pages/AboutPage'))
@@ -82,6 +84,8 @@ export default function App() {
                 <Route path="/categories" element={<CategoriesPage />} />
                 <Route path="/categories/:name" element={<CategoryPage />} />
                 <Route path="/review" element={<ReviewPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/manage" element={<FlashcardManagerPage />} />
                 <Route path="/login" element={<LoginRoute />} />
                 <Route
                   path="/editor"

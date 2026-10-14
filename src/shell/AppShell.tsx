@@ -9,11 +9,13 @@ import {
   Moon,
   Palette,
   PlayCircle,
+  BarChart3,
   Search,
   Sun,
   Tags,
   Info,
   Menu,
+  Table2,
 } from 'lucide-react'
 import { Button, Sheet, TooltipContent, TooltipProvider, TooltipRoot, TooltipTrigger } from '@/ui'
 import { SITE } from '@/lib/site'
@@ -41,10 +43,12 @@ const PRIMARY: NavItem[] = [
   { to: '/', label: '总览', icon: Home, end: true },
   { to: '/cards', label: '全部卡片', icon: Library },
   { to: '/review', label: '复习', icon: PlayCircle },
+  { to: '/dashboard', label: '成长看板', icon: BarChart3 },
   { to: '/search', label: '搜索', icon: Search },
 ]
 
 const SECONDARY: NavItem[] = [
+  { to: '/manage', label: '闪卡管理器', icon: Table2 },
   { to: '/tags', label: '标签', icon: Tags },
   { to: '/categories', label: '分类', icon: LayoutGrid },
   { to: '/themes', label: '主题', icon: Palette },
@@ -55,6 +59,7 @@ const MOBILE: NavItem[] = [
   { to: '/', label: '总览', icon: Home, end: true },
   { to: '/cards', label: '卡片', icon: Library },
   { to: '/review', label: '复习', icon: PlayCircle },
+  { to: '/dashboard', label: '看板', icon: BarChart3 },
   { to: '/search', label: '搜索', icon: Search },
 ]
 
